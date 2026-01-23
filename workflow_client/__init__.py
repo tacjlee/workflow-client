@@ -27,9 +27,30 @@ Usage:
         query="hello",
         filters=MetadataFilter(tenant_id="tenant-123")
     )
+
+Request Interceptors (similar to Java FeignClient):
+    # Auth interceptor
+    class AuthInterceptor:
+        def __init__(self, token: str):
+            self.token = token
+
+        def __call__(self, headers: dict) -> dict:
+            headers["Authorization"] = f"Bearer {self.token}"
+            return headers
+
+    # Tracing interceptor
+    class TracingInterceptor:
+        def __call__(self, headers: dict) -> dict:
+            headers["X-Trace-Id"] = generate_trace_id()
+            return headers
+
+    client = DataStoreClient(interceptors=[
+        AuthInterceptor("my-token"),
+        TracingInterceptor()
+    ])
 """
 
-from .client import DataStoreClient, get_datastore_client
+from .client import DataStoreClient, get_datastore_client, RequestInterceptor
 from .models import (
     MetadataFilter,
     CollectionInfo,
@@ -54,6 +75,7 @@ __all__ = [
     # Client
     "DataStoreClient",
     "get_datastore_client",
+    "RequestInterceptor",
     # Models
     "MetadataFilter",
     "CollectionInfo",

@@ -33,10 +33,41 @@ Usage:
 
 import time
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Callable, Protocol
 from functools import wraps
 
 import httpx
+
+
+class RequestInterceptor(Protocol):
+    """
+    Request interceptor protocol (similar to Java FeignClient RequestInterceptor).
+
+    Implement this protocol to add headers, modify requests, or add tracing.
+
+    Example:
+        class AuthInterceptor:
+            def __init__(self, token: str):
+                self.token = token
+
+            def __call__(self, headers: Dict[str, str]) -> Dict[str, str]:
+                headers["Authorization"] = f"Bearer {self.token}"
+                return headers
+
+        client = DataStoreClient(interceptors=[AuthInterceptor("my-token")])
+    """
+    def __call__(self, headers: Dict[str, str]) -> Dict[str, str]:
+        """
+        Intercept and modify request headers.
+
+        Args:
+            headers: Current request headers
+
+        Returns:
+            Modified headers dict
+        """
+        ...
+
 
 from .models import (
     MetadataFilter,
@@ -93,30 +124,35 @@ class DataStoreClient:
     def __init__(
         self,
         base_url: Optional[str] = None,
-        timeout: float = 30.0,
+        read_timeout: float = 60.0,
         connect_timeout: float = 10.0,
         max_retries: int = 3,
-        pool_size: int = 10
+        max_connections_per_route: int = 50,
+        max_connections: int = 200,
+        interceptors: Optional[List[Callable[[Dict[str, str]], Dict[str, str]]]] = None
     ):
         """
         Initialize DataStoreClient.
 
         Args:
             base_url: Direct URL override (bypasses service discovery)
-            timeout: Request timeout in seconds
-            connect_timeout: Connection timeout in seconds
+            read_timeout: Read timeout in seconds (default: 60, same as Java FeignClient)
+            connect_timeout: Connection timeout in seconds (default: 10, same as Java FeignClient)
             max_retries: Maximum retry attempts
-            pool_size: HTTP connection pool size
+            max_connections_per_route: Max keepalive connections per route (default: 50, same as Java FeignClient)
+            max_connections: Max total connections (default: 200, same as Java FeignClient)
+            interceptors: List of request interceptors (similar to Java FeignClient RequestInterceptor)
         """
         self._service_discovery = ServiceDiscovery()
         self._base_url = base_url
-        self._timeout = httpx.Timeout(timeout, connect=connect_timeout)
+        self._timeout = httpx.Timeout(read_timeout, connect=connect_timeout)
         self._max_retries = max_retries
         self._limits = httpx.Limits(
-            max_keepalive_connections=pool_size,
-            max_connections=pool_size * 2
+            max_keepalive_connections=max_connections_per_route,
+            max_connections=max_connections
         )
         self._client: Optional[httpx.Client] = None
+        self._interceptors: List[Callable[[Dict[str, str]], Dict[str, str]]] = interceptors or []
 
     @property
     def base_url(self) -> str:
@@ -158,6 +194,24 @@ class DataStoreClient:
                 response_body=response.text
             )
 
+    def _apply_interceptors(self, headers: Dict[str, str]) -> Dict[str, str]:
+        """Apply all registered interceptors to headers."""
+        for interceptor in self._interceptors:
+            headers = interceptor(headers)
+        return headers
+
+    def add_interceptor(self, interceptor: Callable[[Dict[str, str]], Dict[str, str]]) -> None:
+        """
+        Add a request interceptor.
+
+        Args:
+            interceptor: Callable that takes headers dict and returns modified headers
+
+        Example:
+            client.add_interceptor(lambda h: {**h, "X-Trace-Id": "abc123"})
+        """
+        self._interceptors.append(interceptor)
+
     def _make_request(
         self,
         method: str,
@@ -168,11 +222,17 @@ class DataStoreClient:
         """Make HTTP request with error handling."""
         try:
             client = self._get_client()
+
+            # Apply interceptors to headers
+            headers = {"Content-Type": "application/json"}
+            headers = self._apply_interceptors(headers)
+
             response = client.request(
                 method=method,
                 url=endpoint,
                 json=json,
-                params=params
+                params=params,
+                headers=headers
             )
             return self._handle_response(response)
         except httpx.ConnectError as e:

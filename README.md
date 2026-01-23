@@ -189,6 +189,59 @@ except DataStoreAPIError as e:
     print(e.status_code, e.response_body)
 ```
 
+## Testing
+
+### Install for Development
+
+```bash
+# Clone and install in development mode
+git clone https://github.com/tacjlee/workflow-client.git
+cd workflow-client
+pip install -e ".[dev]"
+```
+
+### Run Tests
+
+```bash
+# Set service URL (default: http://localhost:8010)
+export DATASTORE_SERVICE_URL=http://localhost:8010
+
+# Run all tests
+pytest tests/ -v
+
+# Run unit tests only (no service required)
+pytest tests/ -v -k "Unit"
+
+# Run integration tests only (requires running service)
+pytest tests/ -v -k "Integration"
+
+# Run comprehensive API coverage test
+pytest tests/test_all_apis.py -v -s
+
+# Run specific test file
+pytest tests/test_collection_api.py -v
+pytest tests/test_document_api.py -v
+pytest tests/test_embedding_api.py -v
+pytest tests/test_search_api.py -v
+pytest tests/test_vector_api.py -v
+```
+
+### Test Coverage
+
+| Test File | APIs Covered |
+|-----------|--------------|
+| `test_collection_api.py` | create_collection, get_collection_info, list_collections, delete_collection |
+| `test_document_api.py` | add_documents, delete_documents |
+| `test_vector_api.py` | add_vectors, delete_vectors |
+| `test_embedding_api.py` | generate_embeddings, health_check |
+| `test_search_api.py` | similarity_search, rag_retrieval |
+| `test_all_apis.py` | **All APIs** - comprehensive end-to-end workflow |
+
+### Test Types
+
+- **Unit Tests**: Mock HTTP calls, test request/response formats, no service required
+- **Integration Tests**: Require running `workflow-datastore` service, test real API calls
+
 ## License
 
 MIT
