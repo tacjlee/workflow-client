@@ -18,6 +18,7 @@ class MetadataFilter(BaseModel):
     project_id: Optional[str] = None
     kb_id: Optional[str] = None
     doc_id: Optional[str] = None
+    document_type: Optional[str] = None
     user_ids: Optional[List[str]] = None
     file_name: Optional[str] = None
     custom: Optional[Dict[str, Any]] = None
@@ -33,6 +34,8 @@ class MetadataFilter(BaseModel):
             result["kb_id"] = self.kb_id
         if self.doc_id:
             result["doc_id"] = self.doc_id
+        if self.document_type:
+            result["document_type"] = self.document_type
         if self.user_ids:
             result["user_ids"] = self.user_ids
         if self.file_name:

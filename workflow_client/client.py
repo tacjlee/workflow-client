@@ -332,6 +332,7 @@ class DataStoreClient:
         project_id: str,
         kb_id: str,
         user_id: Optional[str] = None,
+        document_type: str = "document",
         chunk_size: int = 1000,
         chunk_overlap: int = 200
     ) -> DocumentProcessResult:
@@ -347,6 +348,7 @@ class DataStoreClient:
             project_id: Project ID (required)
             kb_id: Knowledge base ID (required)
             user_id: Optional user ID
+            document_type: Document type (e.g., document, template, viewpoint, rule)
             chunk_size: Chunk size for text splitting
             chunk_overlap: Overlap between chunks
 
@@ -362,6 +364,8 @@ class DataStoreClient:
             content = doc.get("content", "")
             file_name = doc.get("metadata", {}).get("file_name")
             doc_id = doc.get("metadata", {}).get("doc_id")
+            # Allow per-document type override from metadata
+            doc_type = doc.get("metadata", {}).get("document_type", document_type)
 
             data = self._make_request(
                 "POST",
@@ -375,6 +379,7 @@ class DataStoreClient:
                     "doc_id": doc_id,
                     "file_name": file_name,
                     "user_id": user_id,
+                    "document_type": doc_type,
                     "chunk_config": {
                         "strategy": "sentence",
                         "chunk_size": chunk_size,
@@ -403,6 +408,7 @@ class DataStoreClient:
         project_id: Optional[str] = None,
         kb_id: Optional[str] = None,
         doc_id: Optional[str] = None,
+        document_type: Optional[str] = None,
         file_name: Optional[str] = None
     ) -> int:
         """
@@ -420,6 +426,7 @@ class DataStoreClient:
                 "project_id": project_id,
                 "kb_id": kb_id,
                 "doc_id": doc_id,
+                "document_type": document_type,
                 "file_name": file_name
             }
         )
