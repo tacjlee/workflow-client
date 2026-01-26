@@ -86,3 +86,16 @@ class DocumentProcessResult(BaseModel):
     chunks: List[DocumentChunk]
     vector_ids: Optional[List[str]] = None
     status: str
+
+
+class ExtractionResult(BaseModel):
+    """Text extraction result."""
+    content: str
+    file_type: str
+    char_count: int
+    filename: str
+
+
+class SupportedFormats(BaseModel):
+    """Supported file formats for extraction."""
+    extensions: List[str]

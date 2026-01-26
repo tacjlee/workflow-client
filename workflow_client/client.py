@@ -76,6 +76,8 @@ from .models import (
     RAGContext,
     DocumentChunk,
     DocumentProcessResult,
+    ExtractionResult,
+    SupportedFormats,
 )
 from .exceptions import (
     DataStoreConnectionError,
@@ -607,6 +609,79 @@ class DataStoreClient:
             combined_context=context_data.get("combined_context", ""),
             source_documents=context_data.get("source_documents", [])
         )
+
+    # =========================================================================
+    # TEXT EXTRACTION OPERATIONS
+    # =========================================================================
+
+    @retry_with_backoff(max_retries=3)
+    def extract_text(
+        self,
+        file_content: bytes,
+        filename: str
+    ) -> ExtractionResult:
+        """
+        Extract text content from a document file.
+
+        Args:
+            file_content: File content as bytes
+            filename: Original filename (used for format detection)
+
+        Returns:
+            ExtractionResult with extracted text content
+
+        Raises:
+            DataStoreValidationError: If file format is not supported
+            DataStoreAPIError: If extraction fails
+        """
+        try:
+            client = self._get_client()
+
+            # Apply interceptors to headers (without Content-Type for multipart)
+            headers = {}
+            headers = self._apply_interceptors(headers)
+
+            # Send file as multipart form data
+            files = {"file": (filename, file_content)}
+            response = client.post(
+                "/api/datastore/extraction/extract",
+                files=files,
+                headers=headers
+            )
+            data = self._handle_response(response)
+            return ExtractionResult(**data)
+        except httpx.ConnectError as e:
+            raise DataStoreConnectionError(f"Connection failed: {e}")
+        except httpx.TimeoutException as e:
+            raise DataStoreTimeoutError(f"Request timed out: {e}")
+
+    @retry_with_backoff(max_retries=3)
+    def get_supported_formats(self) -> SupportedFormats:
+        """
+        Get list of supported file formats for text extraction.
+
+        Returns:
+            SupportedFormats with list of supported file extensions
+        """
+        data = self._make_request("GET", "/api/datastore/extraction/formats")
+        return SupportedFormats(**data)
+
+    def is_format_supported(self, filename: str) -> bool:
+        """
+        Check if a file format is supported for text extraction.
+
+        Args:
+            filename: Filename to check (only extension is used)
+
+        Returns:
+            True if format is supported, False otherwise
+        """
+        data = self._make_request(
+            "POST",
+            "/api/datastore/extraction/check-format",
+            params={"filename": filename}
+        )
+        return data.get("supported", False)
 
     # =========================================================================
     # HEALTH CHECK

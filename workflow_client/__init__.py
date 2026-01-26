@@ -58,6 +58,8 @@ from .models import (
     RAGContext,
     DocumentChunk,
     DocumentProcessResult,
+    ExtractionResult,
+    SupportedFormats,
 )
 from .exceptions import (
     DataStoreError,
@@ -83,6 +85,8 @@ __all__ = [
     "RAGContext",
     "DocumentChunk",
     "DocumentProcessResult",
+    "ExtractionResult",
+    "SupportedFormats",
     # Exceptions
     "DataStoreError",
     "DataStoreConnectionError",
