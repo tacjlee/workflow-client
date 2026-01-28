@@ -71,14 +71,37 @@ from .exceptions import (
     DataStoreCircuitBreakerError,
 )
 
-__version__ = "1.0.0"
+# Celery Client SDK (optional - requires celery)
+# Import with: from workflow_client.celery_client import CeleryClient
+try:
+    from .celery_client import (
+        CeleryClient,
+        CeleryClientConfig,
+        celery_client,
+        task_method,
+        CeleryClientError,
+        CeleryTimeoutError,
+        CeleryTaskError,
+    )
+    _celery_available = True
+except ImportError:
+    _celery_available = False
+    CeleryClient = None
+    CeleryClientConfig = None
+    celery_client = None
+    task_method = None
+    CeleryClientError = None
+    CeleryTimeoutError = None
+    CeleryTaskError = None
+
+__version__ = "1.1.0"
 
 __all__ = [
-    # Client
+    # DataStore Client
     "DataStoreClient",
     "get_datastore_client",
     "RequestInterceptor",
-    # Models
+    # DataStore Models
     "MetadataFilter",
     "CollectionInfo",
     "SearchResult",
@@ -87,7 +110,7 @@ __all__ = [
     "DocumentProcessResult",
     "ExtractionResult",
     "SupportedFormats",
-    # Exceptions
+    # DataStore Exceptions
     "DataStoreError",
     "DataStoreConnectionError",
     "DataStoreTimeoutError",
@@ -95,4 +118,13 @@ __all__ = [
     "DataStoreNotFoundError",
     "DataStoreValidationError",
     "DataStoreCircuitBreakerError",
+    # Celery Client
+    "CeleryClient",
+    "CeleryClientConfig",
+    "celery_client",
+    "task_method",
+    # Celery Exceptions
+    "CeleryClientError",
+    "CeleryTimeoutError",
+    "CeleryTaskError",
 ]
