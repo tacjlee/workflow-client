@@ -71,6 +71,22 @@ from .exceptions import (
     DataStoreCircuitBreakerError,
 )
 
+# Consul Client SDK (optional - requires python-consul)
+# Import with: from workflow_client import consul_client
+# Or: from workflow_client.consul_client import ConsulClient
+try:
+    from .consul_client import (
+        ConsulClient,
+        consul_client,
+        get_consul_client,
+    )
+    _consul_available = True
+except ImportError:
+    _consul_available = False
+    ConsulClient = None
+    consul_client = None
+    get_consul_client = None
+
 # Celery Client SDK (optional - requires celery)
 # Import with: from workflow_client.celery_client import CeleryClient
 try:
@@ -118,6 +134,10 @@ __all__ = [
     "DataStoreNotFoundError",
     "DataStoreValidationError",
     "DataStoreCircuitBreakerError",
+    # Consul Client
+    "ConsulClient",
+    "consul_client",
+    "get_consul_client",
     # Celery Client
     "CeleryClient",
     "CeleryClientConfig",
