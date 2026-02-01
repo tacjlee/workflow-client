@@ -1,15 +1,15 @@
 """
 Tests for workflow-client calling embedding_service APIs.
 
-These tests validate the DataStoreClient's embedding operations against
-the workflow-datastore service.
+These tests validate the KnowledgeBaseClient's embedding operations against
+the workflow-knowledge-base service.
 
 Run with:
     pytest tests/test_embedding_api.py -v
 
 Requirements:
-    - workflow-datastore service running at http://localhost:8010
-    - Or set DATASTORE_SERVICE_URL environment variable
+    - workflow-knowledge-base service running at http://localhost:8010
+    - Or set KNOWLEDGE_BASE_SERVICE_URL environment variable
 """
 
 import pytest
@@ -21,11 +21,11 @@ from typing import List
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import DataStoreClient
+from workflow_client import KnowledgeBaseClient
 from workflow_client.exceptions import (
-    DataStoreConnectionError,
-    DataStoreTimeoutError,
-    DataStoreAPIError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseTimeoutError,
+    KnowledgeBaseAPIError,
 )
 
 
@@ -39,7 +39,7 @@ class TestEmbeddingAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        client = DataStoreClient(base_url="http://mock-service:8000")
+        client = KnowledgeBaseClient(base_url="http://mock-service:8000")
         return client
 
     def test_generate_embeddings_request_format(self, mock_client):
@@ -57,7 +57,7 @@ class TestEmbeddingAPIUnit:
             # Verify request was made with correct params
             mock_request.assert_called_once_with(
                 "POST",
-                "/api/datastore/embeddings",
+                "/api/knowledge-base/embeddings",
                 json={
                     "texts": texts,
                     "batch_size": 32,
@@ -91,29 +91,29 @@ class TestEmbeddingAPIUnit:
     def test_generate_embeddings_connection_error(self, mock_client):
         """Test generate_embeddings handles connection errors."""
         with patch.object(mock_client, '_make_request') as mock_request:
-            mock_request.side_effect = DataStoreConnectionError("Connection refused")
+            mock_request.side_effect = KnowledgeBaseConnectionError("Connection refused")
 
-            with pytest.raises(DataStoreConnectionError):
+            with pytest.raises(KnowledgeBaseConnectionError):
                 mock_client.generate_embeddings(["test"])
 
     def test_generate_embeddings_timeout_error(self, mock_client):
         """Test generate_embeddings handles timeout errors."""
         with patch.object(mock_client, '_make_request') as mock_request:
-            mock_request.side_effect = DataStoreTimeoutError("Request timed out")
+            mock_request.side_effect = KnowledgeBaseTimeoutError("Request timed out")
 
-            with pytest.raises(DataStoreTimeoutError):
+            with pytest.raises(KnowledgeBaseTimeoutError):
                 mock_client.generate_embeddings(["test"])
 
     def test_generate_embeddings_api_error(self, mock_client):
         """Test generate_embeddings handles API errors."""
         with patch.object(mock_client, '_make_request') as mock_request:
-            mock_request.side_effect = DataStoreAPIError(
+            mock_request.side_effect = KnowledgeBaseAPIError(
                 "Server error",
                 status_code=500,
                 response_body="Internal error"
             )
 
-            with pytest.raises(DataStoreAPIError):
+            with pytest.raises(KnowledgeBaseAPIError):
                 mock_client.generate_embeddings(["test"])
 
 
@@ -122,7 +122,7 @@ class TestEmbeddingAPIRetry:
 
     def test_retry_on_connection_error(self):
         """Test that connection errors trigger retries."""
-        client = DataStoreClient(base_url="http://mock-service:8000", max_retries=3)
+        client = KnowledgeBaseClient(base_url="http://mock-service:8000", max_retries=3)
 
         call_count = 0
 
@@ -130,7 +130,7 @@ class TestEmbeddingAPIRetry:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise DataStoreConnectionError("Connection failed")
+                raise KnowledgeBaseConnectionError("Connection failed")
             return {"embeddings": [[0.1] * 1024]}
 
         with patch.object(client, '_make_request', side_effect=mock_request):
@@ -141,12 +141,12 @@ class TestEmbeddingAPIRetry:
 
     def test_max_retries_exceeded(self):
         """Test that exceeding max retries raises exception."""
-        client = DataStoreClient(base_url="http://mock-service:8000", max_retries=2)
+        client = KnowledgeBaseClient(base_url="http://mock-service:8000", max_retries=2)
 
         with patch.object(client, '_make_request') as mock_request:
-            mock_request.side_effect = DataStoreConnectionError("Connection failed")
+            mock_request.side_effect = KnowledgeBaseConnectionError("Connection failed")
 
-            with pytest.raises(DataStoreConnectionError):
+            with pytest.raises(KnowledgeBaseConnectionError):
                 client.generate_embeddings(["test"])
 
 
@@ -155,19 +155,19 @@ class TestEmbeddingAPIRetry:
 # ============================================================================
 
 @pytest.fixture
-def datastore_url():
-    """Get datastore service URL from environment or default."""
-    return os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")
+def knowledge_base_url():
+    """Get knowledge base service URL from environment or default."""
+    return os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
 
 
 @pytest.fixture
-def live_client(datastore_url):
+def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return DataStoreClient(base_url=datastore_url, timeout=60.0)
+    return KnowledgeBaseClient(base_url=knowledge_base_url, timeout=60.0)
 
 
 def service_available(url: str) -> bool:
-    """Check if the datastore service is available."""
+    """Check if the knowledge base service is available."""
     try:
         import httpx
         response = httpx.get(f"{url}/health", timeout=5.0)
@@ -178,8 +178,8 @@ def service_available(url: str) -> bool:
 
 # Mark integration tests to skip if service unavailable
 requires_service = pytest.mark.skipif(
-    not service_available(os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")),
-    reason="Datastore service not available"
+    not service_available(os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")),
+    reason="Knowledge base service not available"
 )
 
 

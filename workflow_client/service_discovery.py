@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 class ServiceDiscovery:
     """
-    Service discovery for workflow-datastore.
+    Service discovery for workflow-knowledge-base.
 
     Hierarchy:
     1. Consul service catalog (if available)
-    2. DATASTORE_SERVICE_URL environment variable
+    2. KNOWLEDGE_BASE_SERVICE_URL environment variable
     3. Default URL
     """
 
@@ -71,13 +71,13 @@ class ServiceDiscovery:
 
         return None
 
-    def get_datastore_service_url(self) -> str:
+    def get_knowledge_base_service_url(self) -> str:
         """
-        Get datastore-service URL.
+        Get knowledge-base-service URL.
 
         Fallback hierarchy:
         1. Consul service catalog
-        2. DATASTORE_SERVICE_URL environment variable
+        2. KNOWLEDGE_BASE_SERVICE_URL environment variable
         3. Default URL
         """
         # Check cache
@@ -85,24 +85,24 @@ class ServiceDiscovery:
             return self._cached_url
 
         # Try Consul
-        url = self._get_from_consul("workflow-datastore")
+        url = self._get_from_consul("workflow-knowledge-base")
         if url:
             self._cached_url = url
             self._cache_timestamp = time.time()
-            logger.debug(f"Datastore service URL from Consul: {url}")
+            logger.debug(f"Knowledge base service URL from Consul: {url}")
             return url
 
         # Try environment variable
-        env_url = os.getenv("DATASTORE_SERVICE_URL")
+        env_url = os.getenv("KNOWLEDGE_BASE_SERVICE_URL")
         if env_url:
             self._cached_url = env_url
             self._cache_timestamp = time.time()
-            logger.debug(f"Datastore service URL from env: {env_url}")
+            logger.debug(f"Knowledge base service URL from env: {env_url}")
             return env_url
 
         # Default
-        default_url = "http://workflow-datastore:8000"
-        logger.debug(f"Using default datastore service URL: {default_url}")
+        default_url = "http://workflow-knowledge-base:8000"
+        logger.debug(f"Using default knowledge base service URL: {default_url}")
         return default_url
 
     def invalidate_cache(self):

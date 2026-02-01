@@ -1,27 +1,27 @@
 """
-DataStoreClient Exceptions
+KnowledgeBaseClient Exceptions
 
-Custom exceptions for the datastore client.
+Custom exceptions for the knowledge base client.
 """
 
 
-class DataStoreError(Exception):
-    """Base exception for datastore client errors."""
+class KnowledgeBaseError(Exception):
+    """Base exception for knowledge base client errors."""
     pass
 
 
-class DataStoreConnectionError(DataStoreError):
-    """Raised when connection to datastore service fails."""
+class KnowledgeBaseConnectionError(KnowledgeBaseError):
+    """Raised when connection to knowledge base service fails."""
     pass
 
 
-class DataStoreTimeoutError(DataStoreError):
-    """Raised when request to datastore service times out."""
+class KnowledgeBaseTimeoutError(KnowledgeBaseError):
+    """Raised when request to knowledge base service times out."""
     pass
 
 
-class DataStoreAPIError(DataStoreError):
-    """Raised when datastore service returns an error response."""
+class KnowledgeBaseAPIError(KnowledgeBaseError):
+    """Raised when knowledge base service returns an error response."""
 
     def __init__(self, message: str, status_code: int = None, response_body: str = None):
         super().__init__(message)
@@ -29,16 +29,16 @@ class DataStoreAPIError(DataStoreError):
         self.response_body = response_body
 
 
-class DataStoreNotFoundError(DataStoreError):
+class KnowledgeBaseNotFoundError(KnowledgeBaseError):
     """Raised when requested resource is not found."""
     pass
 
 
-class DataStoreValidationError(DataStoreError):
+class KnowledgeBaseValidationError(KnowledgeBaseError):
     """Raised when request validation fails."""
     pass
 
 
-class DataStoreCircuitBreakerError(DataStoreError):
+class KnowledgeBaseCircuitBreakerError(KnowledgeBaseError):
     """Raised when circuit breaker is open."""
     pass

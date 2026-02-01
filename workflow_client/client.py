@@ -1,13 +1,13 @@
 """
-DataStoreClient
+KnowledgeBaseClient
 
-Synchronous HTTP client for workflow-datastore service.
+Synchronous HTTP client for workflow-knowledge-base service.
 Similar to Java FeignClient pattern with service discovery and retry logic.
 
 Usage:
-    from workflow_client import DataStoreClient, MetadataFilter
+    from workflow_client import KnowledgeBaseClient, MetadataFilter
 
-    client = DataStoreClient()
+    client = KnowledgeBaseClient()
 
     # Create collection (tenant-scoped)
     client.create_collection("tenant-123", "my-collection")
@@ -53,7 +53,7 @@ class RequestInterceptor(Protocol):
                 headers["Authorization"] = f"Bearer {self.token}"
                 return headers
 
-        client = DataStoreClient(interceptors=[AuthInterceptor("my-token")])
+        client = KnowledgeBaseClient(interceptors=[AuthInterceptor("my-token")])
     """
     def __call__(self, headers: Dict[str, str]) -> Dict[str, str]:
         """
@@ -79,12 +79,12 @@ from .models import (
     SupportedFormats,
 )
 from .exceptions import (
-    DataStoreConnectionError,
-    DataStoreTimeoutError,
-    DataStoreAPIError,
-    DataStoreNotFoundError,
-    DataStoreValidationError,
-    DataStoreCircuitBreakerError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseTimeoutError,
+    KnowledgeBaseAPIError,
+    KnowledgeBaseNotFoundError,
+    KnowledgeBaseValidationError,
+    KnowledgeBaseCircuitBreakerError,
 )
 from .service_discovery import ServiceDiscovery
 
@@ -100,7 +100,7 @@ def retry_with_backoff(max_retries: int = 3, base_delay: float = 0.5):
             for attempt in range(max_retries):
                 try:
                     return func(self, *args, **kwargs)
-                except (DataStoreConnectionError, DataStoreTimeoutError) as e:
+                except (KnowledgeBaseConnectionError, KnowledgeBaseTimeoutError) as e:
                     last_exception = e
                     if attempt < max_retries - 1:
                         delay = base_delay * (2 ** attempt)
@@ -111,9 +111,9 @@ def retry_with_backoff(max_retries: int = 3, base_delay: float = 0.5):
     return decorator
 
 
-class DataStoreClient:
+class KnowledgeBaseClient:
     """
-    Synchronous HTTP client for workflow-datastore service.
+    Synchronous HTTP client for workflow-knowledge-base service.
 
     Features:
     - Service discovery via Consul with environment fallback
@@ -133,7 +133,7 @@ class DataStoreClient:
         interceptors: Optional[List[Callable[[Dict[str, str]], Dict[str, str]]]] = None
     ):
         """
-        Initialize DataStoreClient.
+        Initialize KnowledgeBaseClient.
 
         Args:
             base_url: Direct URL override (bypasses service discovery)
@@ -160,7 +160,7 @@ class DataStoreClient:
         """Get base URL from service discovery or fallback."""
         if self._base_url:
             return self._base_url
-        return self._service_discovery.get_datastore_service_url()
+        return self._service_discovery.get_knowledge_base_service_url()
 
     def _get_client(self) -> httpx.Client:
         """Get or create HTTP client with connection pooling."""
@@ -177,19 +177,19 @@ class DataStoreClient:
         if response.status_code in (200, 201):
             return response.json()
         elif response.status_code == 404:
-            raise DataStoreNotFoundError(f"Resource not found: {response.text}")
+            raise KnowledgeBaseNotFoundError(f"Resource not found: {response.text}")
         elif response.status_code == 422:
-            raise DataStoreValidationError(f"Validation error: {response.text}")
+            raise KnowledgeBaseValidationError(f"Validation error: {response.text}")
         elif response.status_code == 503:
-            raise DataStoreCircuitBreakerError(f"Service unavailable (circuit breaker open): {response.text}")
+            raise KnowledgeBaseCircuitBreakerError(f"Service unavailable (circuit breaker open): {response.text}")
         elif response.status_code >= 500:
-            raise DataStoreAPIError(
+            raise KnowledgeBaseAPIError(
                 f"Server error: {response.status_code}",
                 status_code=response.status_code,
                 response_body=response.text
             )
         else:
-            raise DataStoreAPIError(
+            raise KnowledgeBaseAPIError(
                 f"API error: {response.status_code}",
                 status_code=response.status_code,
                 response_body=response.text
@@ -237,9 +237,9 @@ class DataStoreClient:
             )
             return self._handle_response(response)
         except httpx.ConnectError as e:
-            raise DataStoreConnectionError(f"Connection failed: {e}")
+            raise KnowledgeBaseConnectionError(f"Connection failed: {e}")
         except httpx.TimeoutException as e:
-            raise DataStoreTimeoutError(f"Request timed out: {e}")
+            raise KnowledgeBaseTimeoutError(f"Request timed out: {e}")
 
     def close(self):
         """Close the HTTP client."""
@@ -278,7 +278,7 @@ class DataStoreClient:
         """
         data = self._make_request(
             "POST",
-            "/api/datastore/collections",
+            "/api/knowledge-base/collections",
             json={
                 "tenant_id": tenant_id,
                 "name": name,
@@ -292,7 +292,7 @@ class DataStoreClient:
     @retry_with_backoff(max_retries=3)
     def get_collection_info(self, collection_name: str) -> CollectionInfo:
         """Get collection information."""
-        data = self._make_request("GET", f"/api/datastore/collections/{collection_name}")
+        data = self._make_request("GET", f"/api/knowledge-base/collections/{collection_name}")
         return CollectionInfo(**data)
 
     @retry_with_backoff(max_retries=3)
@@ -307,7 +307,7 @@ class DataStoreClient:
         if tenant_id:
             params["tenant_id"] = tenant_id
 
-        self._make_request("DELETE", f"/api/datastore/collections/{collection_name}", params=params)
+        self._make_request("DELETE", f"/api/knowledge-base/collections/{collection_name}", params=params)
         return True
 
     @retry_with_backoff(max_retries=3)
@@ -317,7 +317,7 @@ class DataStoreClient:
         if tenant_id:
             params["tenant_id"] = tenant_id
 
-        data = self._make_request("GET", "/api/datastore/collections", params=params)
+        data = self._make_request("GET", "/api/knowledge-base/collections", params=params)
         return [CollectionInfo(**c) for c in data.get("collections", [])]
 
     # =========================================================================
@@ -368,7 +368,7 @@ class DataStoreClient:
 
             data = self._make_request(
                 "POST",
-                "/api/datastore/documents/process",
+                "/api/knowledge-base/documents/process",
                 json={
                     "collection_name": collection_name,
                     "content": content,
@@ -416,7 +416,7 @@ class DataStoreClient:
         """
         data = self._make_request(
             "DELETE",
-            "/api/datastore/documents",
+            "/api/knowledge-base/documents",
             json={
                 "collection_name": collection_name,
                 "tenant_id": tenant_id,
@@ -465,7 +465,7 @@ class DataStoreClient:
 
         data = self._make_request(
             "POST",
-            "/api/datastore/vectors",
+            "/api/knowledge-base/vectors",
             json={
                 "collection_name": collection_name,
                 "vectors": api_vectors,
@@ -484,7 +484,7 @@ class DataStoreClient:
         """Delete vectors by IDs or filter."""
         data = self._make_request(
             "DELETE",
-            "/api/datastore/vectors",
+            "/api/knowledge-base/vectors",
             json={
                 "collection_name": collection_name,
                 "vector_ids": vector_ids,
@@ -506,7 +506,7 @@ class DataStoreClient:
         """Generate embeddings for texts."""
         data = self._make_request(
             "POST",
-            "/api/datastore/embeddings",
+            "/api/knowledge-base/embeddings",
             json={
                 "texts": texts,
                 "batch_size": batch_size,
@@ -554,7 +554,7 @@ class DataStoreClient:
         if score_threshold is not None:
             request_data["score_threshold"] = score_threshold
 
-        data = self._make_request("POST", "/api/datastore/search/similarity", json=request_data)
+        data = self._make_request("POST", "/api/knowledge-base/search/similarity", json=request_data)
         return [SearchResult(**r) for r in data.get("results", [])]
 
     @retry_with_backoff(max_retries=3)
@@ -595,7 +595,7 @@ class DataStoreClient:
         if filters:
             request_data["filters"] = filters.to_dict() if hasattr(filters, 'to_dict') else filters
 
-        data = self._make_request("POST", "/api/datastore/search/rag", json=request_data)
+        data = self._make_request("POST", "/api/knowledge-base/search/rag", json=request_data)
 
         context_data = data.get("context", {})
         return RAGContext(
@@ -625,8 +625,8 @@ class DataStoreClient:
             ExtractionResult with extracted text content
 
         Raises:
-            DataStoreValidationError: If file format is not supported
-            DataStoreAPIError: If extraction fails
+            KnowledgeBaseValidationError: If file format is not supported
+            KnowledgeBaseAPIError: If extraction fails
         """
         try:
             client = self._get_client()
@@ -638,16 +638,16 @@ class DataStoreClient:
             # Send file as multipart form data
             files = {"file": (filename, file_content)}
             response = client.post(
-                "/api/datastore/extraction/extract",
+                "/api/knowledge-base/extraction/extract",
                 files=files,
                 headers=headers
             )
             data = self._handle_response(response)
             return ExtractionResult(**data)
         except httpx.ConnectError as e:
-            raise DataStoreConnectionError(f"Connection failed: {e}")
+            raise KnowledgeBaseConnectionError(f"Connection failed: {e}")
         except httpx.TimeoutException as e:
-            raise DataStoreTimeoutError(f"Request timed out: {e}")
+            raise KnowledgeBaseTimeoutError(f"Request timed out: {e}")
 
     @retry_with_backoff(max_retries=3)
     def get_supported_formats(self) -> SupportedFormats:
@@ -657,7 +657,7 @@ class DataStoreClient:
         Returns:
             SupportedFormats with list of supported file extensions
         """
-        data = self._make_request("GET", "/api/datastore/extraction/formats")
+        data = self._make_request("GET", "/api/knowledge-base/extraction/formats")
         return SupportedFormats(**data)
 
     def is_format_supported(self, filename: str) -> bool:
@@ -672,7 +672,7 @@ class DataStoreClient:
         """
         data = self._make_request(
             "POST",
-            "/api/datastore/extraction/check-format",
+            "/api/knowledge-base/extraction/check-format",
             params={"filename": filename}
         )
         return data.get("supported", False)
@@ -682,7 +682,7 @@ class DataStoreClient:
     # =========================================================================
 
     def health_check(self) -> Dict[str, Any]:
-        """Check datastore-service health."""
+        """Check knowledge-base-service health."""
         try:
             client = self._get_client()
             response = client.get("/health")
@@ -694,12 +694,12 @@ class DataStoreClient:
 
 
 # Singleton instance
-_datastore_client: Optional[DataStoreClient] = None
+_knowledge_base_client: Optional[KnowledgeBaseClient] = None
 
 
-def get_datastore_client() -> DataStoreClient:
-    """Get singleton DataStoreClient instance."""
-    global _datastore_client
-    if _datastore_client is None:
-        _datastore_client = DataStoreClient()
-    return _datastore_client
+def get_knowledge_base_client() -> KnowledgeBaseClient:
+    """Get singleton KnowledgeBaseClient instance."""
+    global _knowledge_base_client
+    if _knowledge_base_client is None:
+        _knowledge_base_client = KnowledgeBaseClient()
+    return _knowledge_base_client

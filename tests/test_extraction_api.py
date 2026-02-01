@@ -6,11 +6,11 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from workflow_client import (
-    DataStoreClient,
+    KnowledgeBaseClient,
     ExtractionResult,
     SupportedFormats,
-    DataStoreValidationError,
-    DataStoreAPIError,
+    KnowledgeBaseValidationError,
+    KnowledgeBaseAPIError,
 )
 
 
@@ -19,7 +19,7 @@ class TestExtractionAPI:
 
     def test_extract_text_success(self):
         """Test successful text extraction."""
-        with patch.object(DataStoreClient, '_get_client') as mock_get_client:
+        with patch.object(KnowledgeBaseClient, '_get_client') as mock_get_client:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = {
@@ -33,7 +33,7 @@ class TestExtractionAPI:
             mock_client.post.return_value = mock_response
             mock_get_client.return_value = mock_client
 
-            client = DataStoreClient(base_url="http://test:8000")
+            client = KnowledgeBaseClient(base_url="http://test:8000")
             result = client.extract_text(b"fake pdf content", "test.pdf")
 
             assert isinstance(result, ExtractionResult)
@@ -44,7 +44,7 @@ class TestExtractionAPI:
 
     def test_extract_text_unsupported_format(self):
         """Test extraction with unsupported file format."""
-        with patch.object(DataStoreClient, '_get_client') as mock_get_client:
+        with patch.object(KnowledgeBaseClient, '_get_client') as mock_get_client:
             mock_response = MagicMock()
             mock_response.status_code = 422
             mock_response.text = "Unsupported file format: .xyz"
@@ -53,19 +53,19 @@ class TestExtractionAPI:
             mock_client.post.return_value = mock_response
             mock_get_client.return_value = mock_client
 
-            client = DataStoreClient(base_url="http://test:8000")
+            client = KnowledgeBaseClient(base_url="http://test:8000")
 
-            with pytest.raises(DataStoreValidationError):
+            with pytest.raises(KnowledgeBaseValidationError):
                 client.extract_text(b"some content", "test.xyz")
 
     def test_get_supported_formats(self):
         """Test getting supported file formats."""
-        with patch.object(DataStoreClient, '_make_request') as mock_request:
+        with patch.object(KnowledgeBaseClient, '_make_request') as mock_request:
             mock_request.return_value = {
                 "extensions": [".txt", ".md", ".json", ".pdf", ".docx", ".xlsx", ".xls", ".pptx", ".html", ".htm"]
             }
 
-            client = DataStoreClient(base_url="http://test:8000")
+            client = KnowledgeBaseClient(base_url="http://test:8000")
             result = client.get_supported_formats()
 
             assert isinstance(result, SupportedFormats)
@@ -75,28 +75,28 @@ class TestExtractionAPI:
 
     def test_is_format_supported_true(self):
         """Test checking if a format is supported (true case)."""
-        with patch.object(DataStoreClient, '_make_request') as mock_request:
+        with patch.object(KnowledgeBaseClient, '_make_request') as mock_request:
             mock_request.return_value = {
                 "filename": "document.pdf",
                 "supported": True,
                 "supported_extensions": [".pdf", ".docx", ".txt"]
             }
 
-            client = DataStoreClient(base_url="http://test:8000")
+            client = KnowledgeBaseClient(base_url="http://test:8000")
             result = client.is_format_supported("document.pdf")
 
             assert result is True
 
     def test_is_format_supported_false(self):
         """Test checking if a format is supported (false case)."""
-        with patch.object(DataStoreClient, '_make_request') as mock_request:
+        with patch.object(KnowledgeBaseClient, '_make_request') as mock_request:
             mock_request.return_value = {
                 "filename": "document.xyz",
                 "supported": False,
                 "supported_extensions": [".pdf", ".docx", ".txt"]
             }
 
-            client = DataStoreClient(base_url="http://test:8000")
+            client = KnowledgeBaseClient(base_url="http://test:8000")
             result = client.is_format_supported("document.xyz")
 
             assert result is False

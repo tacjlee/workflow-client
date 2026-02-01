@@ -1,5 +1,5 @@
 """
-DataStoreClient Models
+KnowledgeBaseClient Models
 
 Pydantic models for request/response handling.
 """

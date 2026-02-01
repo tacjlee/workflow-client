@@ -1,8 +1,8 @@
 """
 Tests for workflow-client calling collection APIs.
 
-These tests validate the DataStoreClient's collection operations against
-the workflow-datastore service.
+These tests validate the KnowledgeBaseClient's collection operations against
+the workflow-knowledge-base service.
 
 Run with:
     pytest tests/test_collection_api.py -v
@@ -19,12 +19,12 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import DataStoreClient
+from workflow_client import KnowledgeBaseClient
 from workflow_client.models import CollectionInfo
 from workflow_client.exceptions import (
-    DataStoreConnectionError,
-    DataStoreAPIError,
-    DataStoreNotFoundError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseAPIError,
+    KnowledgeBaseNotFoundError,
 )
 
 
@@ -33,15 +33,15 @@ from workflow_client.exceptions import (
 # ============================================================================
 
 @pytest.fixture
-def datastore_url():
-    """Get datastore service URL from environment or default."""
-    return os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")
+def knowledge_base_url():
+    """Get knowledge base service URL from environment or default."""
+    return os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
 
 
 @pytest.fixture
-def live_client(datastore_url):
+def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return DataStoreClient(base_url=datastore_url, timeout=60.0)
+    return KnowledgeBaseClient(base_url=knowledge_base_url, timeout=60.0)
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def test_tenant_id():
 
 
 def service_available(url: str) -> bool:
-    """Check if the datastore service is available."""
+    """Check if the knowledge base service is available."""
     try:
         import httpx
         response = httpx.get(f"{url}/health", timeout=5.0)
@@ -61,8 +61,8 @@ def service_available(url: str) -> bool:
 
 
 requires_service = pytest.mark.skipif(
-    not service_available(os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")),
-    reason="Datastore service not available"
+    not service_available(os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")),
+    reason="Knowledge base service not available"
 )
 
 
@@ -76,7 +76,7 @@ class TestCollectionAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        return DataStoreClient(base_url="http://mock-service:8000")
+        return KnowledgeBaseClient(base_url="http://mock-service:8000")
 
     def test_create_collection_request_format(self, mock_client):
         """Test create_collection sends correct request format."""
@@ -101,7 +101,7 @@ class TestCollectionAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "POST"
-            assert call_args[0][1] == "/api/datastore/collections"
+            assert call_args[0][1] == "/api/knowledge-base/collections"
             assert call_args[1]["json"]["tenant_id"] == "test-tenant"
             assert call_args[1]["json"]["name"] == "mycollection"
             assert call_args[1]["json"]["enable_multivector"] is True
@@ -144,7 +144,7 @@ class TestCollectionAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "GET"
-            assert call_args[0][1] == "/api/datastore/collections/test_collection"
+            assert call_args[0][1] == "/api/knowledge-base/collections/test_collection"
 
     def test_list_collections_request_format(self, mock_client):
         """Test list_collections sends correct request format."""
@@ -161,7 +161,7 @@ class TestCollectionAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "GET"
-            assert call_args[0][1] == "/api/datastore/collections"
+            assert call_args[0][1] == "/api/knowledge-base/collections"
             assert call_args[1]["params"]["tenant_id"] == "tenant-1"
 
     def test_list_collections_result_parsing(self, mock_client):
@@ -195,7 +195,7 @@ class TestCollectionAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "DELETE"
-            assert call_args[0][1] == "/api/datastore/collections/test_collection"
+            assert call_args[0][1] == "/api/knowledge-base/collections/test_collection"
             assert call_args[1]["params"]["tenant_id"] == "tenant-1"
             assert call_args[1]["params"]["force"] is True
 
@@ -306,7 +306,7 @@ class TestCollectionAPIIntegration:
 
     def test_get_collection_info_not_found(self, live_client):
         """Test getting info for non-existent collection."""
-        with pytest.raises(DataStoreNotFoundError):
+        with pytest.raises(KnowledgeBaseNotFoundError):
             live_client.get_collection_info("nonexistent_collection_xyz123")
 
     def test_list_collections_all(self, live_client, test_tenant_id):
@@ -370,7 +370,7 @@ class TestCollectionAPIIntegration:
         assert result is True
 
         # Verify it's gone
-        with pytest.raises(DataStoreNotFoundError):
+        with pytest.raises(KnowledgeBaseNotFoundError):
             live_client.get_collection_info(full_name)
 
     def test_delete_collection_with_tenant(self, live_client, test_tenant_id):
@@ -440,7 +440,7 @@ class TestCollectionAPIIntegration:
         assert deleted is True
 
         # 5. Verify gone
-        with pytest.raises(DataStoreNotFoundError):
+        with pytest.raises(KnowledgeBaseNotFoundError):
             live_client.get_collection_info(full_name)
 
 

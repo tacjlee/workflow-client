@@ -1,7 +1,7 @@
 """
-Comprehensive end-to-end tests for workflow-client calling ALL workflow-datastore APIs.
+Comprehensive end-to-end tests for workflow-client calling ALL workflow-knowledge-base APIs.
 
-This test file validates the complete DataStoreClient functionality by exercising
+This test file validates the complete KnowledgeBaseClient functionality by exercising
 every API endpoint in a realistic workflow scenario.
 
 Install workflow-client from git:
@@ -18,25 +18,25 @@ API Coverage:
        - GET /health
 
     2. Collection APIs
-       - POST /api/datastore/collections (create_collection)
-       - GET /api/datastore/collections/{name} (get_collection_info)
-       - GET /api/datastore/collections (list_collections)
-       - DELETE /api/datastore/collections/{name} (delete_collection)
+       - POST /api/knowledge-base/collections (create_collection)
+       - GET /api/knowledge-base/collections/{name} (get_collection_info)
+       - GET /api/knowledge-base/collections (list_collections)
+       - DELETE /api/knowledge-base/collections/{name} (delete_collection)
 
     3. Document APIs
-       - POST /api/datastore/documents/process (add_documents)
-       - DELETE /api/datastore/documents (delete_documents)
+       - POST /api/knowledge-base/documents/process (add_documents)
+       - DELETE /api/knowledge-base/documents (delete_documents)
 
     4. Vector APIs
-       - POST /api/datastore/vectors (add_vectors)
-       - DELETE /api/datastore/vectors (delete_vectors)
+       - POST /api/knowledge-base/vectors (add_vectors)
+       - DELETE /api/knowledge-base/vectors (delete_vectors)
 
     5. Embedding APIs
-       - POST /api/datastore/embeddings (generate_embeddings)
+       - POST /api/knowledge-base/embeddings (generate_embeddings)
 
     6. Search APIs
-       - POST /api/datastore/search/similarity (similarity_search)
-       - POST /api/datastore/search/rag (rag_retrieval)
+       - POST /api/knowledge-base/search/similarity (similarity_search)
+       - POST /api/knowledge-base/search/rag (rag_retrieval)
 """
 
 import pytest
@@ -48,7 +48,7 @@ from typing import List, Dict, Any
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import DataStoreClient, MetadataFilter
+from workflow_client import KnowledgeBaseClient, MetadataFilter
 from workflow_client.models import (
     CollectionInfo,
     SearchResult,
@@ -56,10 +56,10 @@ from workflow_client.models import (
     DocumentProcessResult,
 )
 from workflow_client.exceptions import (
-    DataStoreConnectionError,
-    DataStoreAPIError,
-    DataStoreNotFoundError,
-    DataStoreValidationError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseAPIError,
+    KnowledgeBaseNotFoundError,
+    KnowledgeBaseValidationError,
 )
 
 
@@ -68,15 +68,15 @@ from workflow_client.exceptions import (
 # ============================================================================
 
 @pytest.fixture
-def datastore_url():
-    """Get datastore service URL from environment or default."""
-    return os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")
+def knowledge_base_url():
+    """Get knowledge base service URL from environment or default."""
+    return os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
 
 
 @pytest.fixture
-def client(datastore_url):
+def client(knowledge_base_url):
     """Create a client for tests."""
-    return DataStoreClient(base_url=datastore_url, timeout=120.0)
+    return KnowledgeBaseClient(base_url=knowledge_base_url, timeout=120.0)
 
 
 @pytest.fixture
@@ -98,7 +98,7 @@ def collection_suffix():
 
 
 def service_available(url: str) -> bool:
-    """Check if the datastore service is available."""
+    """Check if the knowledge base service is available."""
     try:
         import httpx
         response = httpx.get(f"{url}/health", timeout=5.0)
@@ -108,8 +108,8 @@ def service_available(url: str) -> bool:
 
 
 requires_service = pytest.mark.skipif(
-    not service_available(os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")),
-    reason="Datastore service not available"
+    not service_available(os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")),
+    reason="Knowledge base service not available"
 )
 
 
@@ -159,7 +159,7 @@ SAMPLE_DOCUMENTS = [
 @requires_service
 class TestAllAPIsIntegration:
     """
-    Comprehensive integration tests that exercise ALL workflow-datastore APIs.
+    Comprehensive integration tests that exercise ALL workflow-knowledge-base APIs.
 
     Test workflow:
     1. Health Check
@@ -213,7 +213,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_02_create_collection(self):
-        """Test create collection API - POST /api/datastore/collections"""
+        """Test create collection API - POST /api/knowledge-base/collections"""
         result = self.client.create_collection(
             tenant_id=self.tenant_id,
             name=self.collection_suffix,
@@ -227,7 +227,7 @@ class TestAllAPIsIntegration:
         print(f"  Created collection: {result.name}")
 
     def test_03_get_collection_info(self):
-        """Test get collection info API - GET /api/datastore/collections/{name}"""
+        """Test get collection info API - GET /api/knowledge-base/collections/{name}"""
         # Create collection first
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -243,7 +243,7 @@ class TestAllAPIsIntegration:
         print(f"  Collection info: {info.name}, vectors: {info.vectors_count}")
 
     def test_04_list_collections(self):
-        """Test list collections API - GET /api/datastore/collections"""
+        """Test list collections API - GET /api/knowledge-base/collections"""
         # Create collection first
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -268,7 +268,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_05_generate_embeddings(self):
-        """Test generate embeddings API - POST /api/datastore/embeddings"""
+        """Test generate embeddings API - POST /api/knowledge-base/embeddings"""
         texts = [
             "Machine learning algorithms",
             "Natural language processing",
@@ -288,7 +288,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_06_add_vectors(self):
-        """Test add vectors API - POST /api/datastore/vectors"""
+        """Test add vectors API - POST /api/knowledge-base/vectors"""
         # Create collection first
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -318,7 +318,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_07_add_documents(self):
-        """Test add documents API - POST /api/datastore/documents/process"""
+        """Test add documents API - POST /api/knowledge-base/documents/process"""
         # Create collection first
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -347,7 +347,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_08_similarity_search(self):
-        """Test similarity search API - POST /api/datastore/search/similarity"""
+        """Test similarity search API - POST /api/knowledge-base/search/similarity"""
         # Setup: create collection and add documents
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -413,7 +413,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_09_rag_retrieval(self):
-        """Test RAG retrieval API - POST /api/datastore/search/rag"""
+        """Test RAG retrieval API - POST /api/knowledge-base/search/rag"""
         # Setup: create collection and add documents
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -474,7 +474,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_10_delete_documents(self):
-        """Test delete documents API - DELETE /api/datastore/documents"""
+        """Test delete documents API - DELETE /api/knowledge-base/documents"""
         # Setup
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -508,7 +508,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_11_delete_vectors(self):
-        """Test delete vectors API - DELETE /api/datastore/vectors"""
+        """Test delete vectors API - DELETE /api/knowledge-base/vectors"""
         # Setup
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -537,7 +537,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_12_delete_collection(self):
-        """Test delete collection API - DELETE /api/datastore/collections/{name}"""
+        """Test delete collection API - DELETE /api/knowledge-base/collections/{name}"""
         # Create collection
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -550,7 +550,7 @@ class TestAllAPIsIntegration:
         assert result is True
 
         # Verify deleted
-        with pytest.raises(DataStoreNotFoundError):
+        with pytest.raises(KnowledgeBaseNotFoundError):
             self.client.get_collection_info(self.collection_name)
         print(f"  Deleted collection: {self.collection_name}")
 
@@ -694,7 +694,7 @@ class TestCompleteWorkflow:
             print(f"    Deleted collection: {collection_name}")
 
             # Verify cleanup
-            with pytest.raises(DataStoreNotFoundError):
+            with pytest.raises(KnowledgeBaseNotFoundError):
                 client.get_collection_info(collection_name)
             print("    Verified collection is deleted")
 
@@ -734,39 +734,39 @@ class TestAPICoverage:
             # Create collection
             coll = client.create_collection(tenant_id, "coverage")
             assert isinstance(coll, CollectionInfo)
-            apis_tested.append("POST /api/datastore/collections")
+            apis_tested.append("POST /api/knowledge-base/collections")
 
             # Get collection
             info = client.get_collection_info(collection_name)
             assert isinstance(info, CollectionInfo)
-            apis_tested.append("GET /api/datastore/collections/{name}")
+            apis_tested.append("GET /api/knowledge-base/collections/{name}")
 
             # List collections
             colls = client.list_collections()
             assert isinstance(colls, list)
-            apis_tested.append("GET /api/datastore/collections")
+            apis_tested.append("GET /api/knowledge-base/collections")
 
             # Generate embeddings
             embs = client.generate_embeddings(["test"])
             assert len(embs) == 1
-            apis_tested.append("POST /api/datastore/embeddings")
+            apis_tested.append("POST /api/knowledge-base/embeddings")
 
             # Add vectors
             vids = client.add_vectors(collection_name, [{"content": "test", "metadata": {}}])
             assert len(vids) == 1
-            apis_tested.append("POST /api/datastore/vectors")
+            apis_tested.append("POST /api/knowledge-base/vectors")
 
             time.sleep(1)
 
             # Similarity search
             results = client.similarity_search(collection_name, "test", top_k=1)
             assert isinstance(results, list)
-            apis_tested.append("POST /api/datastore/search/similarity")
+            apis_tested.append("POST /api/knowledge-base/search/similarity")
 
             # RAG retrieval
             rag = client.rag_retrieval(collection_name, "test", top_k=1)
             assert isinstance(rag, RAGContext)
-            apis_tested.append("POST /api/datastore/search/rag")
+            apis_tested.append("POST /api/knowledge-base/search/rag")
 
             # Add documents
             doc_result = client.add_documents(
@@ -774,24 +774,24 @@ class TestAPICoverage:
                 tenant_id, "proj", "kb"
             )
             assert isinstance(doc_result, DocumentProcessResult)
-            apis_tested.append("POST /api/datastore/documents/process")
+            apis_tested.append("POST /api/knowledge-base/documents/process")
 
             time.sleep(1)
 
             # Delete documents
             del_docs = client.delete_documents(collection_name, doc_id="d1")
             assert isinstance(del_docs, int)
-            apis_tested.append("DELETE /api/datastore/documents")
+            apis_tested.append("DELETE /api/knowledge-base/documents")
 
             # Delete vectors
             del_vecs = client.delete_vectors(collection_name, vector_ids=vids)
             assert isinstance(del_vecs, int)
-            apis_tested.append("DELETE /api/datastore/vectors")
+            apis_tested.append("DELETE /api/knowledge-base/vectors")
 
             # Delete collection
             deleted = client.delete_collection(collection_name, force=True)
             assert deleted is True
-            apis_tested.append("DELETE /api/datastore/collections/{name}")
+            apis_tested.append("DELETE /api/knowledge-base/collections/{name}")
 
         finally:
             try:

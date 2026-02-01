@@ -1,8 +1,8 @@
 """
 Tests for workflow-client calling document APIs.
 
-These tests validate the DataStoreClient's document operations against
-the workflow-datastore service.
+These tests validate the KnowledgeBaseClient's document operations against
+the workflow-knowledge-base service.
 
 Run with:
     pytest tests/test_document_api.py -v
@@ -20,13 +20,13 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import DataStoreClient
+from workflow_client import KnowledgeBaseClient
 from workflow_client.models import DocumentProcessResult, DocumentChunk
 from workflow_client.exceptions import (
-    DataStoreConnectionError,
-    DataStoreAPIError,
-    DataStoreNotFoundError,
-    DataStoreValidationError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseAPIError,
+    KnowledgeBaseNotFoundError,
+    KnowledgeBaseValidationError,
 )
 
 
@@ -35,15 +35,15 @@ from workflow_client.exceptions import (
 # ============================================================================
 
 @pytest.fixture
-def datastore_url():
-    """Get datastore service URL from environment or default."""
-    return os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")
+def knowledge_base_url():
+    """Get knowledge base service URL from environment or default."""
+    return os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
 
 
 @pytest.fixture
-def live_client(datastore_url):
+def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return DataStoreClient(base_url=datastore_url, timeout=120.0)
+    return KnowledgeBaseClient(base_url=knowledge_base_url, timeout=120.0)
 
 
 @pytest.fixture
@@ -66,7 +66,7 @@ def test_collection_name(test_tenant_id):
 
 
 def service_available(url: str) -> bool:
-    """Check if the datastore service is available."""
+    """Check if the knowledge base service is available."""
     try:
         import httpx
         response = httpx.get(f"{url}/health", timeout=5.0)
@@ -76,8 +76,8 @@ def service_available(url: str) -> bool:
 
 
 requires_service = pytest.mark.skipif(
-    not service_available(os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")),
-    reason="Datastore service not available"
+    not service_available(os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")),
+    reason="Knowledge base service not available"
 )
 
 
@@ -91,7 +91,7 @@ class TestDocumentAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        return DataStoreClient(base_url="http://mock-service:8000")
+        return KnowledgeBaseClient(base_url="http://mock-service:8000")
 
     def test_add_documents_request_format(self, mock_client):
         """Test add_documents sends correct request format."""
@@ -123,7 +123,7 @@ class TestDocumentAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "POST"
-            assert call_args[0][1] == "/api/datastore/documents/process"
+            assert call_args[0][1] == "/api/knowledge-base/documents/process"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["tenant_id"] == "tenant-1"
             assert call_args[1]["json"]["kb_id"] == "kb-1"
@@ -196,7 +196,7 @@ class TestDocumentAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "DELETE"
-            assert call_args[0][1] == "/api/datastore/documents"
+            assert call_args[0][1] == "/api/knowledge-base/documents"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["tenant_id"] == "tenant-1"
             assert call_args[1]["json"]["doc_id"] == "doc-1"
@@ -245,7 +245,7 @@ class TestDocumentAPIIntegration:
                 name="documents",
                 enable_multivector=True
             )
-        except DataStoreAPIError:
+        except KnowledgeBaseAPIError:
             pass  # Collection might already exist
 
         yield

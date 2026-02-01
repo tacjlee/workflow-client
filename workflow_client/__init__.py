@@ -1,13 +1,13 @@
 """
-DataStore Client
+KnowledgeBase Client
 
-Python client for workflow-datastore service.
+Python client for workflow-knowledge-base service.
 Provides FeignClient-like interface for RAG operations.
 
 Usage:
-    from workflow_client import DataStoreClient, MetadataFilter
+    from workflow_client import KnowledgeBaseClient, MetadataFilter
 
-    client = DataStoreClient()
+    client = KnowledgeBaseClient()
 
     # Create collection
     client.create_collection(tenant_id="tenant-123", name="my-kb")
@@ -43,13 +43,13 @@ Request Interceptors (similar to Java FeignClient):
             headers["X-Trace-Id"] = generate_trace_id()
             return headers
 
-    client = DataStoreClient(interceptors=[
+    client = KnowledgeBaseClient(interceptors=[
         AuthInterceptor("my-token"),
         TracingInterceptor()
     ])
 """
 
-from .client import DataStoreClient, get_datastore_client, RequestInterceptor
+from .client import KnowledgeBaseClient, get_knowledge_base_client, RequestInterceptor
 from .models import (
     MetadataFilter,
     CollectionInfo,
@@ -61,13 +61,13 @@ from .models import (
     SupportedFormats,
 )
 from .exceptions import (
-    DataStoreError,
-    DataStoreConnectionError,
-    DataStoreTimeoutError,
-    DataStoreAPIError,
-    DataStoreNotFoundError,
-    DataStoreValidationError,
-    DataStoreCircuitBreakerError,
+    KnowledgeBaseError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseTimeoutError,
+    KnowledgeBaseAPIError,
+    KnowledgeBaseNotFoundError,
+    KnowledgeBaseValidationError,
+    KnowledgeBaseCircuitBreakerError,
 )
 
 # Consul Client SDK (optional - requires python-consul)
@@ -109,14 +109,14 @@ except ImportError:
     CeleryTimeoutError = None
     CeleryTaskError = None
 
-__version__ = "1.1.0"
+__version__ = "2.0.0"
 
 __all__ = [
-    # DataStore Client
-    "DataStoreClient",
-    "get_datastore_client",
+    # KnowledgeBase Client
+    "KnowledgeBaseClient",
+    "get_knowledge_base_client",
     "RequestInterceptor",
-    # DataStore Models
+    # KnowledgeBase Models
     "MetadataFilter",
     "CollectionInfo",
     "SearchResult",
@@ -125,14 +125,14 @@ __all__ = [
     "DocumentProcessResult",
     "ExtractionResult",
     "SupportedFormats",
-    # DataStore Exceptions
-    "DataStoreError",
-    "DataStoreConnectionError",
-    "DataStoreTimeoutError",
-    "DataStoreAPIError",
-    "DataStoreNotFoundError",
-    "DataStoreValidationError",
-    "DataStoreCircuitBreakerError",
+    # KnowledgeBase Exceptions
+    "KnowledgeBaseError",
+    "KnowledgeBaseConnectionError",
+    "KnowledgeBaseTimeoutError",
+    "KnowledgeBaseAPIError",
+    "KnowledgeBaseNotFoundError",
+    "KnowledgeBaseValidationError",
+    "KnowledgeBaseCircuitBreakerError",
     # Consul Client
     "ConsulClient",
     "consul_client",

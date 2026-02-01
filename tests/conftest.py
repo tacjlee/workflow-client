@@ -8,7 +8,7 @@ Or for development:
     pip install -e .
 
 Set environment variable for service URL:
-    export DATASTORE_SERVICE_URL=http://localhost:8010
+    export KNOWLEDGE_BASE_SERVICE_URL=http://localhost:8010
 """
 
 import pytest
@@ -16,7 +16,7 @@ import os
 import uuid
 
 # Set default test environment
-os.environ.setdefault("DATASTORE_SERVICE_URL", "http://localhost:8010")
+os.environ.setdefault("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
 
 
 # ============================================================================
@@ -24,9 +24,9 @@ os.environ.setdefault("DATASTORE_SERVICE_URL", "http://localhost:8010")
 # ============================================================================
 
 @pytest.fixture
-def datastore_url():
-    """Get datastore service URL from environment."""
-    return os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")
+def knowledge_base_url():
+    """Get knowledge base service URL from environment."""
+    return os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def test_kb_id():
 # ============================================================================
 
 def service_available(url: str) -> bool:
-    """Check if the datastore service is available."""
+    """Check if the knowledge base service is available."""
     try:
         import httpx
         response = httpx.get(f"{url}/health", timeout=5.0)
@@ -57,8 +57,8 @@ def service_available(url: str) -> bool:
 
 # Skip marker for integration tests
 requires_service = pytest.mark.skipif(
-    not service_available(os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")),
-    reason="Datastore service not available"
+    not service_available(os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")),
+    reason="Knowledge base service not available"
 )
 
 
@@ -88,10 +88,10 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(scope="session", autouse=True)
 def report_service_status():
     """Report service status at start of test session."""
-    url = os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")
+    url = os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
     available = service_available(url)
     print(f"\n{'=' * 60}")
-    print(f"Datastore Service: {url}")
+    print(f"Knowledge Base Service: {url}")
     print(f"Status: {'AVAILABLE' if available else 'UNAVAILABLE'}")
     if not available:
         print("NOTE: Integration tests will be skipped")

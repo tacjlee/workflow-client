@@ -1,8 +1,8 @@
 """
 Tests for workflow-client calling vector APIs.
 
-These tests validate the DataStoreClient's vector operations against
-the workflow-datastore service.
+These tests validate the KnowledgeBaseClient's vector operations against
+the workflow-knowledge-base service.
 
 Run with:
     pytest tests/test_vector_api.py -v
@@ -17,11 +17,11 @@ from typing import List
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import DataStoreClient, MetadataFilter
+from workflow_client import KnowledgeBaseClient, MetadataFilter
 from workflow_client.exceptions import (
-    DataStoreConnectionError,
-    DataStoreAPIError,
-    DataStoreNotFoundError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseAPIError,
+    KnowledgeBaseNotFoundError,
 )
 
 
@@ -30,15 +30,15 @@ from workflow_client.exceptions import (
 # ============================================================================
 
 @pytest.fixture
-def datastore_url():
-    """Get datastore service URL from environment or default."""
-    return os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")
+def knowledge_base_url():
+    """Get knowledge base service URL from environment or default."""
+    return os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
 
 
 @pytest.fixture
-def live_client(datastore_url):
+def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return DataStoreClient(base_url=datastore_url, timeout=60.0)
+    return KnowledgeBaseClient(base_url=knowledge_base_url, timeout=60.0)
 
 
 @pytest.fixture
@@ -56,7 +56,7 @@ def test_collection_name(test_tenant_id):
 
 
 def service_available(url: str) -> bool:
-    """Check if the datastore service is available."""
+    """Check if the knowledge base service is available."""
     try:
         import httpx
         response = httpx.get(f"{url}/health", timeout=5.0)
@@ -66,8 +66,8 @@ def service_available(url: str) -> bool:
 
 
 requires_service = pytest.mark.skipif(
-    not service_available(os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")),
-    reason="Datastore service not available"
+    not service_available(os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")),
+    reason="Knowledge base service not available"
 )
 
 
@@ -81,7 +81,7 @@ class TestVectorAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        return DataStoreClient(base_url="http://mock-service:8000")
+        return KnowledgeBaseClient(base_url="http://mock-service:8000")
 
     def test_add_vectors_request_format(self, mock_client):
         """Test add_vectors sends correct request format."""
@@ -97,7 +97,7 @@ class TestVectorAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "POST"
-            assert call_args[0][1] == "/api/datastore/vectors"
+            assert call_args[0][1] == "/api/knowledge-base/vectors"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["auto_embed"] is True
             assert len(call_args[1]["json"]["vectors"]) == 2
@@ -173,7 +173,7 @@ class TestVectorAPIIntegration:
                 name="vectors",
                 enable_multivector=True
             )
-        except DataStoreAPIError:
+        except KnowledgeBaseAPIError:
             pass  # Collection might already exist
 
         yield
@@ -312,7 +312,7 @@ class TestVectorAPIIntegration:
         try:
             vector_ids = live_client.add_vectors(test_collection_name, [])
             assert vector_ids == []
-        except DataStoreAPIError:
+        except KnowledgeBaseAPIError:
             # Empty list may be rejected by API validation
             pass
 
@@ -327,7 +327,7 @@ class TestVectorAPIIntegration:
             )
             # Should return 0 for non-existent vectors
             assert deleted_count >= 0
-        except DataStoreAPIError:
+        except KnowledgeBaseAPIError:
             # May raise error if collection has no matching vectors
             pass
 

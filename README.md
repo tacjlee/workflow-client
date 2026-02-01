@@ -1,6 +1,6 @@
 # Workflow Client
 
-Python client for `workflow-datastore` service. Provides a FeignClient-like interface for RAG operations.
+Python client for `workflow-knowledge-base` service. Provides a FeignClient-like interface for RAG operations.
 
 ## Installation
 
@@ -20,9 +20,9 @@ workflow-client @ git+https://github.com/tacjlee/workflow-client.git
 ## Quick Start
 
 ```python
-from workflow_client import DataStoreClient, MetadataFilter
+from workflow_client import KnowledgeBaseClient, MetadataFilter
 
-client = DataStoreClient()
+client = KnowledgeBaseClient()
 
 # Create a tenant-scoped collection
 client.create_collection(tenant_id="tenant-123", name="knowledge-base")
@@ -59,17 +59,17 @@ print(context.combined_context)
 
 ### Service Discovery
 
-The client discovers the datastore service URL in this order:
+The client discovers the knowledge base service URL in this order:
 
 1. **Consul** (if enabled and available)
-2. **Environment variable**: `DATASTORE_SERVICE_URL`
-3. **Default**: `http://workflow-datastore:8000`
+2. **Environment variable**: `KNOWLEDGE_BASE_SERVICE_URL`
+3. **Default**: `http://workflow-knowledge-base:8000`
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATASTORE_SERVICE_URL` | `http://workflow-datastore:8000` | Direct service URL |
+| `KNOWLEDGE_BASE_SERVICE_URL` | `http://workflow-knowledge-base:8000` | Direct service URL |
 | `CONSUL_ENABLED` | `true` | Enable Consul discovery |
 | `CONSUL_HOST` | `localhost` | Consul host |
 | `CONSUL_PORT` | `8500` | Consul port |
@@ -78,7 +78,7 @@ The client discovers the datastore service URL in this order:
 
 ```python
 # Bypass service discovery
-client = DataStoreClient(base_url="http://localhost:8000")
+client = KnowledgeBaseClient(base_url="http://localhost:8000")
 ```
 
 ## Data Hierarchy
@@ -163,25 +163,25 @@ embeddings = client.generate_embeddings(texts, batch_size=32)
 
 ```python
 from workflow_client import (
-    DataStoreError,
-    DataStoreConnectionError,
-    DataStoreTimeoutError,
-    DataStoreAPIError,
-    DataStoreNotFoundError,
-    DataStoreValidationError,
+    KnowledgeBaseError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseTimeoutError,
+    KnowledgeBaseAPIError,
+    KnowledgeBaseNotFoundError,
+    KnowledgeBaseValidationError,
 )
 
 try:
     client.similarity_search(...)
-except DataStoreConnectionError:
+except KnowledgeBaseConnectionError:
     # Service unreachable
-except DataStoreTimeoutError:
+except KnowledgeBaseTimeoutError:
     # Request timed out
-except DataStoreNotFoundError:
+except KnowledgeBaseNotFoundError:
     # Collection/resource not found
-except DataStoreValidationError:
+except KnowledgeBaseValidationError:
     # Invalid request
-except DataStoreAPIError as e:
+except KnowledgeBaseAPIError as e:
     print(e.status_code, e.response_body)
 ```
 
@@ -200,7 +200,7 @@ pip install -e ".[dev]"
 
 ```bash
 # Set service URL (default: http://localhost:8010)
-export DATASTORE_SERVICE_URL=http://localhost:8010
+export KNOWLEDGE_BASE_SERVICE_URL=http://localhost:8010
 
 # Run all tests
 pytest tests/ -v
@@ -236,7 +236,7 @@ pytest tests/test_vector_api.py -v
 ### Test Types
 
 - **Unit Tests**: Mock HTTP calls, test request/response formats, no service required
-- **Integration Tests**: Require running `workflow-datastore` service, test real API calls
+- **Integration Tests**: Require running `workflow-knowledge-base` service, test real API calls
 
 ## License
 

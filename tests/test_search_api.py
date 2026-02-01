@@ -1,8 +1,8 @@
 """
 Tests for workflow-client calling search APIs.
 
-These tests validate the DataStoreClient's search operations against
-the workflow-datastore service.
+These tests validate the KnowledgeBaseClient's search operations against
+the workflow-knowledge-base service.
 
 Run with:
     pytest tests/test_search_api.py -v
@@ -18,12 +18,12 @@ from typing import List
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import DataStoreClient, MetadataFilter
+from workflow_client import KnowledgeBaseClient, MetadataFilter
 from workflow_client.models import SearchResult, RAGContext
 from workflow_client.exceptions import (
-    DataStoreConnectionError,
-    DataStoreAPIError,
-    DataStoreNotFoundError,
+    KnowledgeBaseConnectionError,
+    KnowledgeBaseAPIError,
+    KnowledgeBaseNotFoundError,
 )
 
 
@@ -32,15 +32,15 @@ from workflow_client.exceptions import (
 # ============================================================================
 
 @pytest.fixture
-def datastore_url():
-    """Get datastore service URL from environment or default."""
-    return os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")
+def knowledge_base_url():
+    """Get knowledge base service URL from environment or default."""
+    return os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")
 
 
 @pytest.fixture
-def live_client(datastore_url):
+def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return DataStoreClient(base_url=datastore_url, timeout=120.0)
+    return KnowledgeBaseClient(base_url=knowledge_base_url, timeout=120.0)
 
 
 @pytest.fixture
@@ -58,7 +58,7 @@ def test_collection_name(test_tenant_id):
 
 
 def service_available(url: str) -> bool:
-    """Check if the datastore service is available."""
+    """Check if the knowledge base service is available."""
     try:
         import httpx
         response = httpx.get(f"{url}/health", timeout=5.0)
@@ -68,8 +68,8 @@ def service_available(url: str) -> bool:
 
 
 requires_service = pytest.mark.skipif(
-    not service_available(os.environ.get("DATASTORE_SERVICE_URL", "http://localhost:8010")),
-    reason="Datastore service not available"
+    not service_available(os.environ.get("KNOWLEDGE_BASE_SERVICE_URL", "http://localhost:8010")),
+    reason="Knowledge base service not available"
 )
 
 
@@ -83,7 +83,7 @@ class TestSearchAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        return DataStoreClient(base_url="http://mock-service:8000")
+        return KnowledgeBaseClient(base_url="http://mock-service:8000")
 
     def test_similarity_search_request_format(self, mock_client):
         """Test similarity_search sends correct request format."""
@@ -103,7 +103,7 @@ class TestSearchAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "POST"
-            assert call_args[0][1] == "/api/datastore/search/similarity"
+            assert call_args[0][1] == "/api/knowledge-base/search/similarity"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["query"] == "test query"
             assert call_args[1]["json"]["top_k"] == 5
@@ -188,7 +188,7 @@ class TestSearchAPIUnit:
 
             mock_request.assert_called_once()
             call_args = mock_request.call_args
-            assert call_args[0][1] == "/api/datastore/search/rag"
+            assert call_args[0][1] == "/api/knowledge-base/search/rag"
             assert call_args[1]["json"]["top_k"] == 3
 
     def test_rag_retrieval_result_parsing(self, mock_client):
@@ -267,7 +267,7 @@ class TestSearchAPIIntegration:
                 name="search",
                 enable_multivector=True
             )
-        except DataStoreAPIError:
+        except KnowledgeBaseAPIError:
             pass  # Collection might already exist
 
         # Add test documents with tenant metadata
