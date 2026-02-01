@@ -36,12 +36,6 @@ def test_tenant_id():
 
 
 @pytest.fixture
-def test_project_id():
-    """Generate unique project ID."""
-    return f"proj-{uuid.uuid4().hex[:8]}"
-
-
-@pytest.fixture
 def test_kb_id():
     """Generate unique knowledge base ID."""
     return f"kb-{uuid.uuid4().hex[:8]}"

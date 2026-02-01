@@ -17,7 +17,6 @@ Usage:
         collection_name="tenant_tenant_123_my_kb",
         documents=[{"content": "Hello world"}],
         tenant_id="tenant-123",
-        project_id="project-456",
         kb_id="kb-789"
     )
 

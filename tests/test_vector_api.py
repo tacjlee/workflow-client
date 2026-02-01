@@ -234,7 +234,6 @@ class TestVectorAPIIntegration:
                 "content": "Document with full metadata.",
                 "metadata": {
                     "tenant_id": test_tenant_id,
-                    "project_id": "proj-1",
                     "kb_id": "kb-1",
                     "doc_id": "doc-1",
                     "file_name": "test.pdf",

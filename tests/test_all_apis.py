@@ -86,12 +86,6 @@ def test_tenant_id():
 
 
 @pytest.fixture
-def test_project_id():
-    """Generate unique project ID."""
-    return f"proj-{uuid.uuid4().hex[:8]}"
-
-
-@pytest.fixture
 def test_kb_id():
     """Generate unique knowledge base ID."""
     return f"kb-{uuid.uuid4().hex[:8]}"
@@ -184,12 +178,11 @@ class TestAllAPIsIntegration:
 
     @pytest.fixture(autouse=True)
     def setup_test_environment(
-        self, client, test_tenant_id, test_project_id, test_kb_id, collection_suffix
+        self, client, test_tenant_id, test_kb_id, collection_suffix
     ):
         """Set up test environment and clean up after."""
         self.client = client
         self.tenant_id = test_tenant_id
-        self.project_id = test_project_id
         self.kb_id = test_kb_id
         self.collection_suffix = collection_suffix
         self.sanitized_tenant = test_tenant_id.replace('-', '_')
@@ -339,7 +332,6 @@ class TestAllAPIsIntegration:
             collection_name=self.collection_name,
             documents=documents,
             tenant_id=self.tenant_id,
-            project_id=self.project_id,
             kb_id=self.kb_id,
             chunk_size=500,
             chunk_overlap=50
@@ -497,7 +489,6 @@ class TestAllAPIsIntegration:
             collection_name=self.collection_name,
             documents=documents,
             tenant_id=self.tenant_id,
-            project_id=self.project_id,
             kb_id=self.kb_id
         )
         time.sleep(1)
@@ -584,7 +575,6 @@ class TestCompleteWorkflow:
         """Test complete RAG workflow from creation to cleanup."""
         # Generate unique identifiers
         tenant_id = f"workflow-{uuid.uuid4().hex[:8]}"
-        project_id = f"proj-{uuid.uuid4().hex[:8]}"
         kb_id = f"kb-{uuid.uuid4().hex[:8]}"
         sanitized = tenant_id.replace('-', '_')
         collection_name = f"tenant_{sanitized}_workflow"
@@ -621,7 +611,6 @@ class TestCompleteWorkflow:
                 collection_name=collection_name,
                 documents=SAMPLE_DOCUMENTS,
                 tenant_id=tenant_id,
-                project_id=project_id,
                 kb_id=kb_id
             )
             assert result.status == "processed"
