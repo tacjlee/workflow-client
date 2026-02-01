@@ -76,7 +76,7 @@ def knowledge_base_url():
 @pytest.fixture
 def client(knowledge_base_url):
     """Create a client for tests."""
-    return KnowledgeBaseClient(base_url=knowledge_base_url, timeout=120.0)
+    return KnowledgeBaseClient(base_url=knowledge_base_url, read_timeout=120.0)
 
 
 @pytest.fixture

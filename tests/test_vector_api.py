@@ -38,7 +38,7 @@ def knowledge_base_url():
 @pytest.fixture
 def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return KnowledgeBaseClient(base_url=knowledge_base_url, timeout=60.0)
+    return KnowledgeBaseClient(base_url=knowledge_base_url, read_timeout=60.0)
 
 
 @pytest.fixture

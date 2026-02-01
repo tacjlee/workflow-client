@@ -16,6 +16,7 @@ class MetadataFilter(BaseModel):
     """
     tenant_id: Optional[str] = None
     kb_id: Optional[str] = None
+    kb_ids: Optional[List[str]] = None  # Filter by multiple knowledge bases
     doc_id: Optional[str] = None
     document_type: Optional[str] = None
     user_ids: Optional[List[str]] = None
@@ -27,7 +28,9 @@ class MetadataFilter(BaseModel):
         result = {}
         if self.tenant_id:
             result["tenant_id"] = self.tenant_id
-        if self.kb_id:
+        if self.kb_ids:
+            result["kb_ids"] = self.kb_ids
+        elif self.kb_id:
             result["kb_id"] = self.kb_id
         if self.doc_id:
             result["doc_id"] = self.doc_id
