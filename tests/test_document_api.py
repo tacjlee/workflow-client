@@ -53,12 +53,6 @@ def test_tenant_id():
 
 
 @pytest.fixture
-def test_project_id():
-    """Generate unique project ID."""
-    return f"proj-{uuid.uuid4().hex[:8]}"
-
-
-@pytest.fixture
 def test_kb_id():
     """Generate unique knowledge base ID."""
     return f"kb-{uuid.uuid4().hex[:8]}"
@@ -121,7 +115,6 @@ class TestDocumentAPIUnit:
                 collection_name="test_collection",
                 documents=documents,
                 tenant_id="tenant-1",
-                project_id="proj-1",
                 kb_id="kb-1",
                 chunk_size=500,
                 chunk_overlap=100
@@ -133,7 +126,6 @@ class TestDocumentAPIUnit:
             assert call_args[0][1] == "/api/datastore/documents/process"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["tenant_id"] == "tenant-1"
-            assert call_args[1]["json"]["project_id"] == "proj-1"
             assert call_args[1]["json"]["kb_id"] == "kb-1"
             assert call_args[1]["json"]["chunk_config"]["chunk_size"] == 500
             assert call_args[1]["json"]["chunk_config"]["chunk_overlap"] == 100
@@ -153,7 +145,6 @@ class TestDocumentAPIUnit:
                 collection_name="test_collection",
                 documents=documents,
                 tenant_id="tenant-1",
-                project_id="proj-1",
                 kb_id="kb-1"
             )
 
@@ -183,7 +174,6 @@ class TestDocumentAPIUnit:
                 collection_name="test_collection",
                 documents=documents,
                 tenant_id="tenant-1",
-                project_id="proj-1",
                 kb_id="kb-1"
             )
 
@@ -199,7 +189,6 @@ class TestDocumentAPIUnit:
             result = mock_client.delete_documents(
                 collection_name="test_collection",
                 tenant_id="tenant-1",
-                project_id="proj-1",
                 kb_id="kb-1",
                 doc_id="doc-1"
             )
@@ -268,7 +257,7 @@ class TestDocumentAPIIntegration:
             pass
 
     def test_add_single_document(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test adding a single document."""
         documents = [
@@ -283,7 +272,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id
         )
 
@@ -292,7 +280,7 @@ class TestDocumentAPIIntegration:
         assert result.status == "processed"
 
     def test_add_document_with_chunking(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test adding document that requires chunking."""
         # Long document that should be chunked
@@ -314,7 +302,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id,
             chunk_size=500,
             chunk_overlap=50
@@ -324,7 +311,7 @@ class TestDocumentAPIIntegration:
         assert result.status == "processed"
 
     def test_add_multiple_documents(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test adding multiple documents."""
         documents = [
@@ -337,7 +324,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id
         )
 
@@ -345,7 +331,7 @@ class TestDocumentAPIIntegration:
         assert result.status == "processed"
 
     def test_add_document_with_user_id(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test adding document with user_id."""
         documents = [
@@ -356,7 +342,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id,
             user_id="user-123"
         )
@@ -364,7 +349,7 @@ class TestDocumentAPIIntegration:
         assert result.status == "processed"
 
     def test_add_document_unicode_content(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test adding document with unicode content."""
         documents = [
@@ -376,7 +361,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id
         )
 
@@ -384,7 +368,7 @@ class TestDocumentAPIIntegration:
         assert result.chunks_count >= 2
 
     def test_delete_documents_by_doc_id(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test deleting documents by doc_id."""
         # First add a document
@@ -395,7 +379,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id
         )
 
@@ -412,7 +395,7 @@ class TestDocumentAPIIntegration:
         assert deleted_count == -1 or deleted_count >= 0
 
     def test_delete_documents_by_kb_id(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test deleting documents by kb_id."""
         # Add documents
@@ -424,7 +407,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id
         )
 
@@ -441,7 +423,7 @@ class TestDocumentAPIIntegration:
         assert deleted_count == -1 or deleted_count >= 0
 
     def test_delete_documents_by_tenant_id(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test deleting documents by tenant_id."""
         # Add documents
@@ -452,7 +434,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id
         )
 
@@ -469,7 +450,7 @@ class TestDocumentAPIIntegration:
         assert deleted_count == -1 or deleted_count >= 0
 
     def test_add_and_search_documents(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test adding documents and then searching for them."""
         # Add documents
@@ -487,7 +468,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id
         )
 
@@ -505,7 +485,7 @@ class TestDocumentAPIIntegration:
         assert len(results) > 0
 
     def test_document_full_lifecycle(
-        self, live_client, test_collection_name, test_tenant_id, test_project_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_kb_id
     ):
         """Test full document lifecycle: add -> search -> delete."""
         unique_id = uuid.uuid4().hex[:8]
@@ -522,7 +502,6 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            project_id=test_project_id,
             kb_id=test_kb_id
         )
         assert result.status == "processed"

@@ -115,7 +115,6 @@ class TestSearchAPIUnit:
 
             filters = MetadataFilter(
                 tenant_id="tenant-1",
-                project_id="proj-1",
                 kb_id="kb-1"
             )
             mock_client.similarity_search(
@@ -126,7 +125,6 @@ class TestSearchAPIUnit:
 
             call_args = mock_request.call_args
             assert call_args[1]["json"]["filters"]["tenant_id"] == "tenant-1"
-            assert call_args[1]["json"]["filters"]["project_id"] == "proj-1"
             assert call_args[1]["json"]["filters"]["kb_id"] == "kb-1"
 
     def test_similarity_search_with_score_threshold(self, mock_client):

@@ -12,10 +12,9 @@ class MetadataFilter(BaseModel):
     """
     Metadata filter for search operations.
 
-    Hierarchy: tenant_id -> project_id -> kb_id -> doc_id
+    Hierarchy: tenant_id -> kb_id -> doc_id
     """
     tenant_id: Optional[str] = None
-    project_id: Optional[str] = None
     kb_id: Optional[str] = None
     doc_id: Optional[str] = None
     document_type: Optional[str] = None
@@ -28,8 +27,6 @@ class MetadataFilter(BaseModel):
         result = {}
         if self.tenant_id:
             result["tenant_id"] = self.tenant_id
-        if self.project_id:
-            result["project_id"] = self.project_id
         if self.kb_id:
             result["kb_id"] = self.kb_id
         if self.doc_id:

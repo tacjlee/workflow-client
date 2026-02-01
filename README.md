@@ -35,7 +35,6 @@ client.add_documents(
         {"content": "Document content here", "metadata": {"file_name": "doc.pdf"}}
     ],
     tenant_id="tenant-123",
-    project_id="project-456",
     kb_id="kb-789"
 )
 
@@ -51,7 +50,7 @@ results = client.similarity_search(
 context = client.rag_retrieval(
     collection_name="tenant_tenant_123_knowledge_base",
     query="What is...",
-    filters=MetadataFilter(tenant_id="tenant-123", project_id="project-456")
+    filters=MetadataFilter(tenant_id="tenant-123", kb_id="kb-789")
 )
 print(context.combined_context)
 ```
@@ -85,10 +84,9 @@ client = DataStoreClient(base_url="http://localhost:8000")
 ## Data Hierarchy
 
 ```
-tenant_id      -> Collection isolation
-  project_id   -> Metadata filter
-    kb_id      -> Metadata filter
-      doc_id   -> Metadata filter
+tenant_id    -> Collection isolation
+  kb_id      -> Metadata filter
+    doc_id   -> Metadata filter
 ```
 
 ## API Reference
@@ -117,7 +115,6 @@ client.add_documents(
     collection_name,
     documents,
     tenant_id,
-    project_id,
     kb_id,
     user_id=None,
     chunk_size=1000,
@@ -128,7 +125,6 @@ client.add_documents(
 client.delete_documents(
     collection_name,
     tenant_id=None,
-    project_id=None,
     kb_id=None,
     doc_id=None,
     file_name=None

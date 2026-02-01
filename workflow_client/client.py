@@ -18,7 +18,6 @@ Usage:
         collection_name="tenant_tenant_123_my_collection",
         documents=[{"content": "Hello world", "metadata": {"file_name": "doc.pdf"}}],
         tenant_id="tenant-123",
-        project_id="project-456",
         kb_id="kb-789"
     )
 
@@ -27,7 +26,7 @@ Usage:
         collection_name="tenant_tenant_123_my_collection",
         query="hello",
         top_k=10,
-        filters=MetadataFilter(tenant_id="tenant-123", project_id="project-456")
+        filters=MetadataFilter(tenant_id="tenant-123", kb_id="kb-789")
     )
 """
 
@@ -331,7 +330,6 @@ class DataStoreClient:
         collection_name: str,
         documents: List[Dict[str, Any]],
         tenant_id: str,
-        project_id: str,
         kb_id: str,
         user_id: Optional[str] = None,
         document_type: str = "document",
@@ -341,13 +339,12 @@ class DataStoreClient:
         """
         Add documents to collection (with automatic chunking and embedding).
 
-        Hierarchy: tenant_id -> project_id -> kb_id -> doc_id
+        Hierarchy: tenant_id -> kb_id -> doc_id
 
         Args:
             collection_name: Target collection name
             documents: List of document dicts with 'content' and optional 'metadata'
             tenant_id: Tenant ID (required)
-            project_id: Project ID (required)
             kb_id: Knowledge base ID (required)
             user_id: Optional user ID
             document_type: Document type (e.g., document, template, viewpoint, rule)
@@ -376,7 +373,6 @@ class DataStoreClient:
                     "collection_name": collection_name,
                     "content": content,
                     "tenant_id": tenant_id,
-                    "project_id": project_id,
                     "kb_id": kb_id,
                     "doc_id": doc_id,
                     "file_name": file_name,
@@ -407,7 +403,6 @@ class DataStoreClient:
         self,
         collection_name: str,
         tenant_id: Optional[str] = None,
-        project_id: Optional[str] = None,
         kb_id: Optional[str] = None,
         doc_id: Optional[str] = None,
         document_type: Optional[str] = None,
@@ -417,7 +412,7 @@ class DataStoreClient:
         Delete document vectors from collection.
 
         At least one filter is required.
-        Hierarchy: tenant_id -> project_id -> kb_id -> doc_id
+        Hierarchy: tenant_id -> kb_id -> doc_id
         """
         data = self._make_request(
             "DELETE",
@@ -425,7 +420,6 @@ class DataStoreClient:
             json={
                 "collection_name": collection_name,
                 "tenant_id": tenant_id,
-                "project_id": project_id,
                 "kb_id": kb_id,
                 "doc_id": doc_id,
                 "document_type": document_type,
