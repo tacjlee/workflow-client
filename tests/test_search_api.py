@@ -1,8 +1,8 @@
 """
 Tests for workflow-client calling search APIs.
 
-These tests validate the KnowledgeBaseClient's search operations against
-the workflow-knowledge-base service.
+These tests validate the KnowledgeClient's search operations against
+the workflow-knowledge service.
 
 Run with:
     pytest tests/test_search_api.py -v
@@ -18,7 +18,7 @@ from typing import List
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import KnowledgeBaseClient, MetadataFilter
+from workflow_client import KnowledgeClient, MetadataFilter
 from workflow_client.models import SearchResult, RAGContext
 from workflow_client.exceptions import (
     KnowledgeBaseConnectionError,
@@ -40,7 +40,7 @@ def knowledge_base_url():
 @pytest.fixture
 def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return KnowledgeBaseClient(base_url=knowledge_base_url, read_timeout=120.0)
+    return KnowledgeClient(base_url=knowledge_base_url, read_timeout=120.0)
 
 
 @pytest.fixture
@@ -83,10 +83,10 @@ class TestSearchAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        return KnowledgeBaseClient(base_url="http://mock-service:8000")
+        return KnowledgeClient(base_url="http://mock-service:8000")
 
-    def test_similarity_search_request_format(self, mock_client):
-        """Test similarity_search sends correct request format."""
+    def test_search_request_format(self, mock_client):
+        """Test search sends correct request format."""
         with patch.object(mock_client, '_make_request') as mock_request:
             mock_request.return_value = {
                 "results": [
@@ -94,7 +94,7 @@ class TestSearchAPIUnit:
                 ]
             }
 
-            results = mock_client.similarity_search(
+            results = mock_client.search(
                 collection_name="test_collection",
                 query="test query",
                 top_k=5
@@ -103,21 +103,21 @@ class TestSearchAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "POST"
-            assert call_args[0][1] == "/api/knowledge-base/search/similarity"
+            assert call_args[0][1] == "/api/knowledge/search"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["query"] == "test query"
             assert call_args[1]["json"]["top_k"] == 5
 
-    def test_similarity_search_with_filters(self, mock_client):
-        """Test similarity_search with metadata filters."""
+    def test_search_with_filters(self, mock_client):
+        """Test search with metadata filters."""
         with patch.object(mock_client, '_make_request') as mock_request:
             mock_request.return_value = {"results": []}
 
             filters = MetadataFilter(
                 tenant_id="tenant-1",
-                kb_id="kb-1"
+                knowledge_id="kb-1"
             )
-            mock_client.similarity_search(
+            mock_client.search(
                 collection_name="test_collection",
                 query="test query",
                 filters=filters
@@ -125,14 +125,14 @@ class TestSearchAPIUnit:
 
             call_args = mock_request.call_args
             assert call_args[1]["json"]["filters"]["tenant_id"] == "tenant-1"
-            assert call_args[1]["json"]["filters"]["kb_id"] == "kb-1"
+            assert call_args[1]["json"]["filters"]["knowledge_id"] == "kb-1"
 
-    def test_similarity_search_with_score_threshold(self, mock_client):
-        """Test similarity_search with score threshold."""
+    def test_search_with_score_threshold(self, mock_client):
+        """Test search with score threshold."""
         with patch.object(mock_client, '_make_request') as mock_request:
             mock_request.return_value = {"results": []}
 
-            mock_client.similarity_search(
+            mock_client.search(
                 collection_name="test_collection",
                 query="test query",
                 score_threshold=0.7
@@ -141,8 +141,8 @@ class TestSearchAPIUnit:
             call_args = mock_request.call_args
             assert call_args[1]["json"]["score_threshold"] == 0.7
 
-    def test_similarity_search_result_parsing(self, mock_client):
-        """Test similarity_search result parsing."""
+    def test_search_result_parsing(self, mock_client):
+        """Test search result parsing."""
         with patch.object(mock_client, '_make_request') as mock_request:
             mock_request.return_value = {
                 "results": [
@@ -150,24 +150,24 @@ class TestSearchAPIUnit:
                         "id": "vec-1",
                         "content": "First result content",
                         "score": 0.95,
-                        "metadata": {"doc_id": "doc-1"}
+                        "metadata": {"document_id": "doc-1"}
                     },
                     {
                         "id": "vec-2",
                         "content": "Second result content",
                         "score": 0.85,
-                        "metadata": {"doc_id": "doc-2"}
+                        "metadata": {"document_id": "doc-2"}
                     }
                 ]
             }
 
-            results = mock_client.similarity_search("test_collection", "test query")
+            results = mock_client.search("test_collection", "test query")
 
             assert len(results) == 2
             assert isinstance(results[0], SearchResult)
             assert results[0].id == "vec-1"
             assert results[0].score == 0.95
-            assert results[0].metadata["doc_id"] == "doc-1"
+            assert results[0].metadata["document_id"] == "doc-1"
 
     def test_rag_retrieval_request_format(self, mock_client):
         """Test rag_retrieval sends correct request format."""
@@ -188,7 +188,7 @@ class TestSearchAPIUnit:
 
             mock_request.assert_called_once()
             call_args = mock_request.call_args
-            assert call_args[0][1] == "/api/knowledge-base/search/rag"
+            assert call_args[0][1] == "/api/knowledge/search/rag"
             assert call_args[1]["json"]["top_k"] == 3
 
     def test_rag_retrieval_result_parsing(self, mock_client):
@@ -225,35 +225,35 @@ class TestSearchAPIIntegration:
     TEST_DOCUMENTS = [
         {
             "content": "Machine learning is a subset of artificial intelligence that enables computers to learn from data without being explicitly programmed.",
-            "metadata": {"doc_id": "ml-1", "category": "ml", "topic": "introduction"}
+            "metadata": {"document_id": "ml-1", "category": "ml", "topic": "introduction"}
         },
         {
             "content": "Deep learning uses neural networks with many layers to process complex patterns in large amounts of data.",
-            "metadata": {"doc_id": "dl-1", "category": "ml", "topic": "deep-learning"}
+            "metadata": {"document_id": "dl-1", "category": "ml", "topic": "deep-learning"}
         },
         {
             "content": "Natural language processing allows computers to understand and generate human language.",
-            "metadata": {"doc_id": "nlp-1", "category": "nlp", "topic": "introduction"}
+            "metadata": {"document_id": "nlp-1", "category": "nlp", "topic": "introduction"}
         },
         {
             "content": "Vector databases store and query high-dimensional vectors for similarity search applications.",
-            "metadata": {"doc_id": "vec-1", "category": "database", "topic": "vectors"}
+            "metadata": {"document_id": "vec-1", "category": "database", "topic": "vectors"}
         },
         {
             "content": "Retrieval augmented generation combines search with language models to provide more accurate responses.",
-            "metadata": {"doc_id": "rag-1", "category": "rag", "topic": "introduction"}
+            "metadata": {"document_id": "rag-1", "category": "rag", "topic": "introduction"}
         },
         {
             "content": "Python is a popular programming language used for data science and machine learning applications.",
-            "metadata": {"doc_id": "python-1", "category": "programming", "topic": "python"}
+            "metadata": {"document_id": "python-1", "category": "programming", "topic": "python"}
         },
         {
             "content": "FastAPI is a modern web framework for building APIs with Python, featuring automatic documentation.",
-            "metadata": {"doc_id": "fastapi-1", "category": "programming", "topic": "web"}
+            "metadata": {"document_id": "fastapi-1", "category": "programming", "topic": "web"}
         },
         {
             "content": "Embeddings are dense vector representations of text that capture semantic meaning.",
-            "metadata": {"doc_id": "emb-1", "category": "ml", "topic": "embeddings"}
+            "metadata": {"document_id": "emb-1", "category": "ml", "topic": "embeddings"}
         },
     ]
 
@@ -293,9 +293,9 @@ class TestSearchAPIIntegration:
         except Exception:
             pass
 
-    def test_similarity_search_basic(self, live_client, test_collection_name):
+    def test_search_basic(self, live_client, test_collection_name):
         """Test basic similarity search."""
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query="What is machine learning?",
             top_k=3
@@ -307,9 +307,9 @@ class TestSearchAPIIntegration:
         # First result should be about ML
         assert results[0].score > 0.5
 
-    def test_similarity_search_semantic_relevance(self, live_client, test_collection_name):
+    def test_search_semantic_relevance(self, live_client, test_collection_name):
         """Test that search returns semantically relevant results."""
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query="neural networks and AI",
             top_k=5
@@ -323,14 +323,14 @@ class TestSearchAPIIntegration:
         )
         assert ml_related, "Expected ML-related results for AI query"
 
-    def test_similarity_search_with_filters(self, live_client, test_collection_name, test_tenant_id):
+    def test_search_with_filters(self, live_client, test_collection_name, test_tenant_id):
         """Test similarity search with metadata filters."""
         filters = MetadataFilter(
             tenant_id=test_tenant_id,
             # Filter by custom metadata if supported
         )
 
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query="programming language",
             top_k=10,
@@ -341,20 +341,20 @@ class TestSearchAPIIntegration:
         # All results should match the tenant filter
         # (exact filter verification depends on what metadata is returned)
 
-    def test_similarity_search_top_k(self, live_client, test_collection_name):
+    def test_search_top_k(self, live_client, test_collection_name):
         """Test that top_k limits results correctly."""
         for k in [1, 3, 5]:
-            results = live_client.similarity_search(
+            results = live_client.search(
                 collection_name=test_collection_name,
                 query="data and algorithms",
                 top_k=k
             )
             assert len(results) <= k
 
-    def test_similarity_search_score_threshold(self, live_client, test_collection_name):
+    def test_search_score_threshold(self, live_client, test_collection_name):
         """Test score threshold filtering."""
         # Get results without threshold first
-        all_results = live_client.similarity_search(
+        all_results = live_client.search(
             collection_name=test_collection_name,
             query="machine learning AI",
             top_k=10
@@ -368,7 +368,7 @@ class TestSearchAPIIntegration:
             # Ensure threshold is valid (0-1 range for cosine similarity)
             threshold = min(threshold, 0.95)
 
-            filtered_results = live_client.similarity_search(
+            filtered_results = live_client.search(
                 collection_name=test_collection_name,
                 query="machine learning AI",
                 top_k=10,
@@ -379,9 +379,9 @@ class TestSearchAPIIntegration:
             for r in filtered_results:
                 assert r.score >= threshold
 
-    def test_similarity_search_score_ordering(self, live_client, test_collection_name):
+    def test_search_score_ordering(self, live_client, test_collection_name):
         """Test that results are ordered by score descending."""
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query="programming and software development",
             top_k=5
@@ -391,15 +391,15 @@ class TestSearchAPIIntegration:
             scores = [r.score for r in results]
             assert scores == sorted(scores, reverse=True), "Results should be ordered by score descending"
 
-    def test_similarity_search_different_queries(self, live_client, test_collection_name):
+    def test_search_different_queries(self, live_client, test_collection_name):
         """Test that different queries return different results."""
-        results_ml = live_client.similarity_search(
+        results_ml = live_client.search(
             collection_name=test_collection_name,
             query="machine learning and AI",
             top_k=3
         )
 
-        results_web = live_client.similarity_search(
+        results_web = live_client.search(
             collection_name=test_collection_name,
             query="web framework and API development",
             top_k=3
@@ -452,9 +452,9 @@ class TestSearchAPIIntegration:
 
         assert isinstance(result, RAGContext)
 
-    def test_similarity_search_unicode_query(self, live_client, test_collection_name):
+    def test_search_unicode_query(self, live_client, test_collection_name):
         """Test search with unicode query."""
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query="机器学习 artificial intelligence",  # Mixed Chinese and English
             top_k=3
@@ -463,14 +463,14 @@ class TestSearchAPIIntegration:
         # Should return results without error
         assert isinstance(results, list)
 
-    def test_similarity_search_long_query(self, live_client, test_collection_name):
+    def test_search_long_query(self, live_client, test_collection_name):
         """Test search with long query."""
         long_query = "I want to learn about " + " ".join(
             ["machine learning", "deep learning", "neural networks",
              "natural language processing", "computer vision", "data science"] * 10
         )
 
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query=long_query,
             top_k=3
@@ -478,9 +478,9 @@ class TestSearchAPIIntegration:
 
         assert isinstance(results, list)
 
-    def test_similarity_search_empty_results(self, live_client, test_collection_name):
+    def test_search_empty_results(self, live_client, test_collection_name):
         """Test search that returns no results (high threshold)."""
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query="completely unrelated gibberish xyzzy",
             top_k=3,

@@ -1,8 +1,8 @@
 """
 Tests for workflow-client calling document APIs.
 
-These tests validate the KnowledgeBaseClient's document operations against
-the workflow-knowledge-base service.
+These tests validate the KnowledgeClient's document operations against
+the workflow-knowledge service.
 
 Run with:
     pytest tests/test_document_api.py -v
@@ -20,7 +20,7 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import KnowledgeBaseClient
+from workflow_client import KnowledgeClient
 from workflow_client.models import DocumentProcessResult, DocumentChunk
 from workflow_client.exceptions import (
     KnowledgeBaseConnectionError,
@@ -43,7 +43,7 @@ def knowledge_base_url():
 @pytest.fixture
 def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return KnowledgeBaseClient(base_url=knowledge_base_url, read_timeout=120.0)
+    return KnowledgeClient(base_url=knowledge_base_url, read_timeout=120.0)
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def test_tenant_id():
 
 
 @pytest.fixture
-def test_kb_id():
+def test_knowledge_id():
     """Generate unique knowledge base ID."""
     return f"kb-{uuid.uuid4().hex[:8]}"
 
@@ -91,7 +91,7 @@ class TestDocumentAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        return KnowledgeBaseClient(base_url="http://mock-service:8000")
+        return KnowledgeClient(base_url="http://mock-service:8000")
 
     def test_add_documents_request_format(self, mock_client):
         """Test add_documents sends correct request format."""
@@ -107,7 +107,7 @@ class TestDocumentAPIUnit:
             documents = [
                 {
                     "content": "This is document content.",
-                    "metadata": {"file_name": "test.pdf", "doc_id": "doc-1"}
+                    "metadata": {"file_name": "test.pdf", "document_id": "doc-1"}
                 }
             ]
 
@@ -115,7 +115,7 @@ class TestDocumentAPIUnit:
                 collection_name="test_collection",
                 documents=documents,
                 tenant_id="tenant-1",
-                kb_id="kb-1",
+                knowledge_id="kb-1",
                 chunk_size=500,
                 chunk_overlap=100
             )
@@ -123,10 +123,10 @@ class TestDocumentAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "POST"
-            assert call_args[0][1] == "/api/knowledge-base/documents/process"
+            assert call_args[0][1] == "/api/knowledge/documents/process"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["tenant_id"] == "tenant-1"
-            assert call_args[1]["json"]["kb_id"] == "kb-1"
+            assert call_args[1]["json"]["knowledge_id"] == "kb-1"
             assert call_args[1]["json"]["chunk_config"]["chunk_size"] == 500
             assert call_args[1]["json"]["chunk_config"]["chunk_overlap"] == 100
 
@@ -140,12 +140,12 @@ class TestDocumentAPIUnit:
                 "vector_ids": ["vec-1"]
             }
 
-            documents = [{"content": "Test content", "metadata": {"doc_id": "doc-1"}}]
+            documents = [{"content": "Test content", "metadata": {"document_id": "doc-1"}}]
             result = mock_client.add_documents(
                 collection_name="test_collection",
                 documents=documents,
                 tenant_id="tenant-1",
-                kb_id="kb-1"
+                knowledge_id="kb-1"
             )
 
             assert isinstance(result, DocumentProcessResult)
@@ -165,16 +165,16 @@ class TestDocumentAPIUnit:
 
         with patch.object(mock_client, '_make_request', side_effect=mock_request_fn):
             documents = [
-                {"content": "Document 1", "metadata": {"doc_id": "doc-1"}},
-                {"content": "Document 2", "metadata": {"doc_id": "doc-2"}},
-                {"content": "Document 3", "metadata": {"doc_id": "doc-3"}},
+                {"content": "Document 1", "metadata": {"document_id": "doc-1"}},
+                {"content": "Document 2", "metadata": {"document_id": "doc-2"}},
+                {"content": "Document 3", "metadata": {"document_id": "doc-3"}},
             ]
 
             result = mock_client.add_documents(
                 collection_name="test_collection",
                 documents=documents,
                 tenant_id="tenant-1",
-                kb_id="kb-1"
+                knowledge_id="kb-1"
             )
 
             # Should call API for each document
@@ -189,17 +189,17 @@ class TestDocumentAPIUnit:
             result = mock_client.delete_documents(
                 collection_name="test_collection",
                 tenant_id="tenant-1",
-                kb_id="kb-1",
-                doc_id="doc-1"
+                knowledge_id="kb-1",
+                document_id="doc-1"
             )
 
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "DELETE"
-            assert call_args[0][1] == "/api/knowledge-base/documents"
+            assert call_args[0][1] == "/api/knowledge/documents"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["tenant_id"] == "tenant-1"
-            assert call_args[1]["json"]["doc_id"] == "doc-1"
+            assert call_args[1]["json"]["document_id"] == "doc-1"
 
     def test_delete_documents_by_filename(self, mock_client):
         """Test delete_documents by file_name."""
@@ -257,14 +257,14 @@ class TestDocumentAPIIntegration:
             pass
 
     def test_add_single_document(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
         """Test adding a single document."""
         documents = [
             {
                 "content": "Machine learning is a subset of artificial intelligence. "
                            "It enables computers to learn from data without explicit programming.",
-                "metadata": {"file_name": "ml-intro.txt", "doc_id": "doc-ml-1"}
+                "metadata": {"file_name": "ml-intro.txt", "document_id": "doc-ml-1"}
             }
         ]
 
@@ -272,7 +272,7 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
 
         assert isinstance(result, DocumentProcessResult)
@@ -280,7 +280,7 @@ class TestDocumentAPIIntegration:
         assert result.status == "processed"
 
     def test_add_document_with_chunking(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
         """Test adding document that requires chunking."""
         # Long document that should be chunked
@@ -294,7 +294,7 @@ class TestDocumentAPIIntegration:
         documents = [
             {
                 "content": long_content,
-                "metadata": {"file_name": "long-doc.txt", "doc_id": "doc-long"}
+                "metadata": {"file_name": "long-doc.txt", "document_id": "doc-long"}
             }
         ]
 
@@ -302,7 +302,7 @@ class TestDocumentAPIIntegration:
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id,
+            knowledge_id=test_knowledge_id,
             chunk_size=500,
             chunk_overlap=50
         )
@@ -311,130 +311,130 @@ class TestDocumentAPIIntegration:
         assert result.status == "processed"
 
     def test_add_multiple_documents(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
         """Test adding multiple documents."""
         documents = [
-            {"content": "Python is a programming language.", "metadata": {"doc_id": "doc-py"}},
-            {"content": "JavaScript runs in the browser.", "metadata": {"doc_id": "doc-js"}},
-            {"content": "Rust is memory safe.", "metadata": {"doc_id": "doc-rs"}},
+            {"content": "Python is a programming language.", "metadata": {"document_id": "doc-py"}},
+            {"content": "JavaScript runs in the browser.", "metadata": {"document_id": "doc-js"}},
+            {"content": "Rust is memory safe.", "metadata": {"document_id": "doc-rs"}},
         ]
 
         result = live_client.add_documents(
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
 
         assert result.chunks_count >= 3
         assert result.status == "processed"
 
     def test_add_document_with_user_id(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
         """Test adding document with user_id."""
         documents = [
-            {"content": "Document from specific user.", "metadata": {"doc_id": "doc-user"}}
+            {"content": "Document from specific user.", "metadata": {"document_id": "doc-user"}}
         ]
 
         result = live_client.add_documents(
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id,
+            knowledge_id=test_knowledge_id,
             user_id="user-123"
         )
 
         assert result.status == "processed"
 
     def test_add_document_unicode_content(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
         """Test adding document with unicode content."""
         documents = [
-            {"content": "日本語ドキュメント。これはテストです。", "metadata": {"doc_id": "doc-jp"}},
-            {"content": "中文文档内容。这是一个测试文档。", "metadata": {"doc_id": "doc-zh"}},
+            {"content": "日本語ドキュメント。これはテストです。", "metadata": {"document_id": "doc-jp"}},
+            {"content": "中文文档内容。这是一个测试文档。", "metadata": {"document_id": "doc-zh"}},
         ]
 
         result = live_client.add_documents(
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
 
         assert result.status == "processed"
         assert result.chunks_count >= 2
 
-    def test_delete_documents_by_doc_id(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+    def test_delete_documents_by_document_id(
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
-        """Test deleting documents by doc_id."""
+        """Test deleting documents by document_id."""
         # First add a document
         documents = [
-            {"content": "Document to be deleted.", "metadata": {"doc_id": "doc-delete-me"}}
+            {"content": "Document to be deleted.", "metadata": {"document_id": "doc-delete-me"}}
         ]
         live_client.add_documents(
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
 
         # Wait for indexing
         time.sleep(1)
 
-        # Delete by doc_id
+        # Delete by document_id
         deleted_count = live_client.delete_documents(
             collection_name=test_collection_name,
-            doc_id="doc-delete-me"
+            document_id="doc-delete-me"
         )
 
         # Filter-based deletes return -1 (Qdrant doesn't provide count)
         assert deleted_count == -1 or deleted_count >= 0
 
-    def test_delete_documents_by_kb_id(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+    def test_delete_documents_by_knowledge_id(
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
-        """Test deleting documents by kb_id."""
+        """Test deleting documents by knowledge_id."""
         # Add documents
         documents = [
-            {"content": "Doc 1 for kb.", "metadata": {"doc_id": "doc-kb-1"}},
-            {"content": "Doc 2 for kb.", "metadata": {"doc_id": "doc-kb-2"}},
+            {"content": "Doc 1 for kb.", "metadata": {"document_id": "doc-kb-1"}},
+            {"content": "Doc 2 for kb.", "metadata": {"document_id": "doc-kb-2"}},
         ]
         live_client.add_documents(
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
 
         # Wait for indexing
         time.sleep(1)
 
-        # Delete by kb_id
+        # Delete by knowledge_id
         deleted_count = live_client.delete_documents(
             collection_name=test_collection_name,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
 
         # Filter-based deletes return -1 (Qdrant doesn't provide count)
         assert deleted_count == -1 or deleted_count >= 0
 
     def test_delete_documents_by_tenant_id(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
         """Test deleting documents by tenant_id."""
         # Add documents
         documents = [
-            {"content": "Doc for tenant.", "metadata": {"doc_id": "doc-tenant-1"}}
+            {"content": "Doc for tenant.", "metadata": {"document_id": "doc-tenant-1"}}
         ]
         live_client.add_documents(
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
 
         # Wait for indexing
@@ -450,32 +450,32 @@ class TestDocumentAPIIntegration:
         assert deleted_count == -1 or deleted_count >= 0
 
     def test_add_and_search_documents(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
         """Test adding documents and then searching for them."""
         # Add documents
         documents = [
             {
                 "content": "Neural networks are inspired by biological neurons.",
-                "metadata": {"doc_id": "doc-nn"}
+                "metadata": {"document_id": "doc-nn"}
             },
             {
                 "content": "Databases store and retrieve structured data.",
-                "metadata": {"doc_id": "doc-db"}
+                "metadata": {"document_id": "doc-db"}
             }
         ]
         live_client.add_documents(
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
 
         # Wait for indexing
         time.sleep(2)
 
         # Search for neural networks
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query="What are neural networks?",
             top_k=5
@@ -485,24 +485,24 @@ class TestDocumentAPIIntegration:
         assert len(results) > 0
 
     def test_document_full_lifecycle(
-        self, live_client, test_collection_name, test_tenant_id, test_kb_id
+        self, live_client, test_collection_name, test_tenant_id, test_knowledge_id
     ):
         """Test full document lifecycle: add -> search -> delete."""
         unique_id = uuid.uuid4().hex[:8]
-        doc_id = f"doc-lifecycle-{unique_id}"
+        document_id = f"doc-lifecycle-{unique_id}"
 
         # 1. Add document
         documents = [
             {
                 "content": "This is a lifecycle test document about quantum computing.",
-                "metadata": {"doc_id": doc_id, "file_name": "lifecycle.txt"}
+                "metadata": {"document_id": document_id, "file_name": "lifecycle.txt"}
             }
         ]
         result = live_client.add_documents(
             collection_name=test_collection_name,
             documents=documents,
             tenant_id=test_tenant_id,
-            kb_id=test_kb_id
+            knowledge_id=test_knowledge_id
         )
         assert result.status == "processed"
 
@@ -510,7 +510,7 @@ class TestDocumentAPIIntegration:
         time.sleep(2)
 
         # 3. Search for it
-        results = live_client.similarity_search(
+        results = live_client.search(
             collection_name=test_collection_name,
             query="quantum computing",
             top_k=5
@@ -520,7 +520,7 @@ class TestDocumentAPIIntegration:
         # 4. Delete
         deleted = live_client.delete_documents(
             collection_name=test_collection_name,
-            doc_id=doc_id
+            document_id=document_id
         )
         # Filter-based deletes return -1 (Qdrant doesn't provide count)
         assert deleted == -1 or deleted >= 0

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class ServiceDiscovery:
     """
-    Service discovery for workflow-knowledge-base.
+    Service discovery for workflow-knowledge.
 
     Hierarchy:
     1. Consul service catalog (if available)
@@ -85,7 +85,7 @@ class ServiceDiscovery:
             return self._cached_url
 
         # Try Consul
-        url = self._get_from_consul("workflow-knowledge-base")
+        url = self._get_from_consul("workflow-knowledge")
         if url:
             self._cached_url = url
             self._cache_timestamp = time.time()
@@ -101,7 +101,7 @@ class ServiceDiscovery:
             return env_url
 
         # Default
-        default_url = "http://workflow-knowledge-base:8000"
+        default_url = "http://workflow-knowledge:8000"
         logger.debug(f"Using default knowledge base service URL: {default_url}")
         return default_url
 

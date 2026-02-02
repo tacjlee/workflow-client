@@ -1,5 +1,5 @@
 """
-KnowledgeBaseClient Models
+KnowledgeClient Models
 
 Pydantic models for request/response handling.
 """
@@ -12,12 +12,12 @@ class MetadataFilter(BaseModel):
     """
     Metadata filter for search operations.
 
-    Hierarchy: tenant_id -> kb_id -> doc_id
+    Hierarchy: tenant_id -> knowledge_id -> document_id
     """
     tenant_id: Optional[str] = None
-    kb_id: Optional[str] = None
-    kb_ids: Optional[List[str]] = None  # Filter by multiple knowledge bases
-    doc_id: Optional[str] = None
+    knowledge_id: Optional[str] = None
+    knowledge_ids: Optional[List[str]] = None  # Filter by multiple knowledge bases
+    document_id: Optional[str] = None
     document_type: Optional[str] = None
     user_ids: Optional[List[str]] = None
     file_name: Optional[str] = None
@@ -28,12 +28,12 @@ class MetadataFilter(BaseModel):
         result = {}
         if self.tenant_id:
             result["tenant_id"] = self.tenant_id
-        if self.kb_ids:
-            result["kb_ids"] = self.kb_ids
-        elif self.kb_id:
-            result["kb_id"] = self.kb_id
-        if self.doc_id:
-            result["doc_id"] = self.doc_id
+        if self.knowledge_ids:
+            result["knowledge_ids"] = self.knowledge_ids
+        elif self.knowledge_id:
+            result["knowledge_id"] = self.knowledge_id
+        if self.document_id:
+            result["document_id"] = self.document_id
         if self.document_type:
             result["document_type"] = self.document_type
         if self.user_ids:

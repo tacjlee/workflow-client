@@ -1,6 +1,6 @@
 # Workflow Client
 
-Python client for `workflow-knowledge-base` service. Provides a FeignClient-like interface for RAG operations.
+Python client for `workflow-knowledge` service. Provides a FeignClient-like interface for RAG operations.
 
 ## Installation
 
@@ -20,9 +20,9 @@ workflow-client @ git+https://github.com/tacjlee/workflow-client.git
 ## Quick Start
 
 ```python
-from workflow_client import KnowledgeBaseClient, MetadataFilter
+from workflow_client import KnowledgeClient, MetadataFilter
 
-client = KnowledgeBaseClient()
+client = KnowledgeClient()
 
 # Create a tenant-scoped collection
 client.create_collection(tenant_id="tenant-123", name="knowledge-base")
@@ -39,7 +39,7 @@ client.add_documents(
 )
 
 # Search with tenant filtering
-results = client.similarity_search(
+results = client.search(
     collection_name="tenant_tenant_123_knowledge_base",
     query="search query",
     top_k=10,
@@ -63,13 +63,13 @@ The client discovers the knowledge base service URL in this order:
 
 1. **Consul** (if enabled and available)
 2. **Environment variable**: `KNOWLEDGE_BASE_SERVICE_URL`
-3. **Default**: `http://workflow-knowledge-base:8000`
+3. **Default**: `http://workflow-knowledge:8000`
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `KNOWLEDGE_BASE_SERVICE_URL` | `http://workflow-knowledge-base:8000` | Direct service URL |
+| `KNOWLEDGE_BASE_SERVICE_URL` | `http://workflow-knowledge:8000` | Direct service URL |
 | `CONSUL_ENABLED` | `true` | Enable Consul discovery |
 | `CONSUL_HOST` | `localhost` | Consul host |
 | `CONSUL_PORT` | `8500` | Consul port |
@@ -78,7 +78,7 @@ The client discovers the knowledge base service URL in this order:
 
 ```python
 # Bypass service discovery
-client = KnowledgeBaseClient(base_url="http://localhost:8000")
+client = KnowledgeClient(base_url="http://localhost:8000")
 ```
 
 ## Data Hierarchy
@@ -134,8 +134,8 @@ client.delete_documents(
 ### Search
 
 ```python
-# Similarity search
-results = client.similarity_search(
+# Search
+results = client.search(
     collection_name,
     query,
     top_k=10,
@@ -172,7 +172,7 @@ from workflow_client import (
 )
 
 try:
-    client.similarity_search(...)
+    client.search(...)
 except KnowledgeBaseConnectionError:
     # Service unreachable
 except KnowledgeBaseTimeoutError:
@@ -230,13 +230,13 @@ pytest tests/test_vector_api.py -v
 | `test_document_api.py` | add_documents, delete_documents |
 | `test_vector_api.py` | add_vectors, delete_vectors |
 | `test_embedding_api.py` | generate_embeddings, health_check |
-| `test_search_api.py` | similarity_search, rag_retrieval |
+| `test_search_api.py` | search, rag_retrieval |
 | `test_all_apis.py` | **All APIs** - comprehensive end-to-end workflow |
 
 ### Test Types
 
 - **Unit Tests**: Mock HTTP calls, test request/response formats, no service required
-- **Integration Tests**: Require running `workflow-knowledge-base` service, test real API calls
+- **Integration Tests**: Require running `workflow-knowledge` service, test real API calls
 
 ## License
 

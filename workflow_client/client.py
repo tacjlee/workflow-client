@@ -1,13 +1,13 @@
 """
-KnowledgeBaseClient
+KnowledgeClient
 
-Synchronous HTTP client for workflow-knowledge-base service.
+Synchronous HTTP client for workflow-knowledge service.
 Similar to Java FeignClient pattern with service discovery and retry logic.
 
 Usage:
-    from workflow_client import KnowledgeBaseClient, MetadataFilter
+    from workflow_client import KnowledgeClient, MetadataFilter
 
-    client = KnowledgeBaseClient()
+    client = KnowledgeClient()
 
     # Create collection (tenant-scoped)
     client.create_collection("tenant-123", "my-collection")
@@ -18,15 +18,15 @@ Usage:
         collection_name="tenant_tenant_123_my_collection",
         documents=[{"content": "Hello world", "metadata": {"file_name": "doc.pdf"}}],
         tenant_id="tenant-123",
-        kb_id="kb-789"
+        knowledge_id="kb-789"
     )
 
     # Search with tenant filtering
-    results = client.similarity_search(
+    results = client.search(
         collection_name="tenant_tenant_123_my_collection",
         query="hello",
         top_k=10,
-        filters=MetadataFilter(tenant_id="tenant-123", kb_id="kb-789")
+        filters=MetadataFilter(tenant_id="tenant-123", knowledge_id="kb-789")
     )
 """
 
@@ -53,7 +53,7 @@ class RequestInterceptor(Protocol):
                 headers["Authorization"] = f"Bearer {self.token}"
                 return headers
 
-        client = KnowledgeBaseClient(interceptors=[AuthInterceptor("my-token")])
+        client = KnowledgeClient(interceptors=[AuthInterceptor("my-token")])
     """
     def __call__(self, headers: Dict[str, str]) -> Dict[str, str]:
         """
@@ -111,9 +111,9 @@ def retry_with_backoff(max_retries: int = 3, base_delay: float = 0.5):
     return decorator
 
 
-class KnowledgeBaseClient:
+class KnowledgeClient:
     """
-    Synchronous HTTP client for workflow-knowledge-base service.
+    Synchronous HTTP client for workflow-knowledge service.
 
     Features:
     - Service discovery via Consul with environment fallback
@@ -133,7 +133,7 @@ class KnowledgeBaseClient:
         interceptors: Optional[List[Callable[[Dict[str, str]], Dict[str, str]]]] = None
     ):
         """
-        Initialize KnowledgeBaseClient.
+        Initialize KnowledgeClient.
 
         Args:
             base_url: Direct URL override (bypasses service discovery)
@@ -278,7 +278,7 @@ class KnowledgeBaseClient:
         """
         data = self._make_request(
             "POST",
-            "/api/knowledge-base/collections",
+            "/api/knowledge/collections",
             json={
                 "tenant_id": tenant_id,
                 "name": name,
@@ -292,7 +292,7 @@ class KnowledgeBaseClient:
     @retry_with_backoff(max_retries=3)
     def get_collection_info(self, collection_name: str) -> CollectionInfo:
         """Get collection information."""
-        data = self._make_request("GET", f"/api/knowledge-base/collections/{collection_name}")
+        data = self._make_request("GET", f"/api/knowledge/collections/{collection_name}")
         return CollectionInfo(**data)
 
     @retry_with_backoff(max_retries=3)
@@ -307,7 +307,7 @@ class KnowledgeBaseClient:
         if tenant_id:
             params["tenant_id"] = tenant_id
 
-        self._make_request("DELETE", f"/api/knowledge-base/collections/{collection_name}", params=params)
+        self._make_request("DELETE", f"/api/knowledge/collections/{collection_name}", params=params)
         return True
 
     @retry_with_backoff(max_retries=3)
@@ -317,7 +317,7 @@ class KnowledgeBaseClient:
         if tenant_id:
             params["tenant_id"] = tenant_id
 
-        data = self._make_request("GET", "/api/knowledge-base/collections", params=params)
+        data = self._make_request("GET", "/api/knowledge/collections", params=params)
         return [CollectionInfo(**c) for c in data.get("collections", [])]
 
     # =========================================================================
@@ -330,7 +330,7 @@ class KnowledgeBaseClient:
         collection_name: str,
         documents: List[Dict[str, Any]],
         tenant_id: str,
-        kb_id: str,
+        knowledge_id: str,
         user_id: Optional[str] = None,
         document_type: str = "document",
         chunk_size: int = 1000,
@@ -339,13 +339,13 @@ class KnowledgeBaseClient:
         """
         Add documents to collection (with automatic chunking and embedding).
 
-        Hierarchy: tenant_id -> kb_id -> doc_id
+        Hierarchy: tenant_id -> knowledge_id -> document_id
 
         Args:
             collection_name: Target collection name
             documents: List of document dicts with 'content' and optional 'metadata'
             tenant_id: Tenant ID (required)
-            kb_id: Knowledge base ID (required)
+            knowledge_id: Knowledge base ID (required)
             user_id: Optional user ID
             document_type: Document type (e.g., document, template, viewpoint, rule)
             chunk_size: Chunk size for text splitting
@@ -362,19 +362,19 @@ class KnowledgeBaseClient:
         for doc in documents:
             content = doc.get("content", "")
             file_name = doc.get("metadata", {}).get("file_name")
-            doc_id = doc.get("metadata", {}).get("doc_id")
+            document_id = doc.get("metadata", {}).get("document_id")
             # Allow per-document type override from metadata
             doc_type = doc.get("metadata", {}).get("document_type", document_type)
 
             data = self._make_request(
                 "POST",
-                "/api/knowledge-base/documents/process",
+                "/api/knowledge/documents/process",
                 json={
                     "collection_name": collection_name,
                     "content": content,
                     "tenant_id": tenant_id,
-                    "kb_id": kb_id,
-                    "doc_id": doc_id,
+                    "knowledge_id": knowledge_id,
+                    "document_id": document_id,
                     "file_name": file_name,
                     "user_id": user_id,
                     "document_type": doc_type,
@@ -391,7 +391,7 @@ class KnowledgeBaseClient:
                 all_vector_ids.extend(data["vector_ids"])
 
         return DocumentProcessResult(
-            document_id=documents[0].get("metadata", {}).get("doc_id", "batch"),
+            document_id=documents[0].get("metadata", {}).get("document_id", "batch"),
             chunks_count=len(all_chunks),
             chunks=all_chunks,
             vector_ids=all_vector_ids if all_vector_ids else None,
@@ -403,8 +403,8 @@ class KnowledgeBaseClient:
         self,
         collection_name: str,
         tenant_id: Optional[str] = None,
-        kb_id: Optional[str] = None,
-        doc_id: Optional[str] = None,
+        knowledge_id: Optional[str] = None,
+        document_id: Optional[str] = None,
         document_type: Optional[str] = None,
         file_name: Optional[str] = None
     ) -> int:
@@ -412,16 +412,16 @@ class KnowledgeBaseClient:
         Delete document vectors from collection.
 
         At least one filter is required.
-        Hierarchy: tenant_id -> kb_id -> doc_id
+        Hierarchy: tenant_id -> knowledge_id -> document_id
         """
         data = self._make_request(
             "DELETE",
-            "/api/knowledge-base/documents",
+            "/api/knowledge/documents",
             json={
                 "collection_name": collection_name,
                 "tenant_id": tenant_id,
-                "kb_id": kb_id,
-                "doc_id": doc_id,
+                "knowledge_id": knowledge_id,
+                "document_id": document_id,
                 "document_type": document_type,
                 "file_name": file_name
             }
@@ -465,7 +465,7 @@ class KnowledgeBaseClient:
 
         data = self._make_request(
             "POST",
-            "/api/knowledge-base/vectors",
+            "/api/knowledge/vectors",
             json={
                 "collection_name": collection_name,
                 "vectors": api_vectors,
@@ -484,7 +484,7 @@ class KnowledgeBaseClient:
         """Delete vectors by IDs or filter."""
         data = self._make_request(
             "DELETE",
-            "/api/knowledge-base/vectors",
+            "/api/knowledge/vectors",
             json={
                 "collection_name": collection_name,
                 "vector_ids": vector_ids,
@@ -506,7 +506,7 @@ class KnowledgeBaseClient:
         """Generate embeddings for texts."""
         data = self._make_request(
             "POST",
-            "/api/knowledge-base/embeddings",
+            "/api/knowledge/embeddings",
             json={
                 "texts": texts,
                 "batch_size": batch_size,
@@ -520,7 +520,7 @@ class KnowledgeBaseClient:
     # =========================================================================
 
     @retry_with_backoff(max_retries=3)
-    def similarity_search(
+    def search(
         self,
         collection_name: str,
         query: str,
@@ -530,14 +530,14 @@ class KnowledgeBaseClient:
         include_embeddings: bool = False
     ) -> List[SearchResult]:
         """
-        Perform similarity search.
+        Search for documents using semantic similarity.
 
         Args:
             collection_name: Collection to search
             query: Query text
             top_k: Number of results
             filters: Metadata filters
-            score_threshold: Minimum similarity score
+            score_threshold: Minimum similarity score (0-1)
             include_embeddings: Include embeddings in results
 
         Returns:
@@ -554,8 +554,64 @@ class KnowledgeBaseClient:
         if score_threshold is not None:
             request_data["score_threshold"] = score_threshold
 
-        data = self._make_request("POST", "/api/knowledge-base/search/similarity", json=request_data)
+        data = self._make_request("POST", "/api/knowledge/search", json=request_data)
         return [SearchResult(**r) for r in data.get("results", [])]
+
+    @retry_with_backoff(max_retries=3)
+    def search_by_document_type(
+        self,
+        collection_name: str,
+        query: str,
+        document_type: str,
+        tenant_id: Optional[str] = None,
+        knowledge_id: Optional[str] = None,
+        top_k: int = 10,
+        score_threshold: Optional[float] = None,
+        include_embeddings: bool = False
+    ) -> List[SearchResult]:
+        """
+        Search within a specific document type.
+
+        Convenience method for filtering search results by document_type.
+        Useful for searching specific categories like 'viewpoint', 'rule',
+        'template', etc.
+
+        Args:
+            collection_name: Collection to search
+            query: Query text
+            document_type: Document type to filter by (e.g., 'viewpoint', 'rule')
+            tenant_id: Optional tenant ID filter
+            knowledge_id: Optional knowledge base ID filter
+            top_k: Number of results (default: 10)
+            score_threshold: Minimum similarity score (0-1)
+            include_embeddings: Include embeddings in results
+
+        Returns:
+            List of SearchResult matching the document type
+
+        Example:
+            # Search for viewpoints about email validation
+            results = client.search_by_document_type(
+                collection_name="tenant_abc_test_kb",
+                query="email validation",
+                document_type="viewpoint",
+                tenant_id="abc",
+                top_k=5
+            )
+        """
+        filters = MetadataFilter(
+            tenant_id=tenant_id,
+            knowledge_id=knowledge_id,
+            document_type=document_type
+        )
+        return self.search(
+            collection_name=collection_name,
+            query=query,
+            top_k=top_k,
+            filters=filters,
+            score_threshold=score_threshold,
+            include_embeddings=include_embeddings
+        )
 
     @retry_with_backoff(max_retries=3)
     def rag_retrieval(
@@ -595,7 +651,7 @@ class KnowledgeBaseClient:
         if filters:
             request_data["filters"] = filters.to_dict() if hasattr(filters, 'to_dict') else filters
 
-        data = self._make_request("POST", "/api/knowledge-base/search/rag", json=request_data)
+        data = self._make_request("POST", "/api/knowledge/search/rag", json=request_data)
 
         context_data = data.get("context", {})
         return RAGContext(
@@ -638,7 +694,7 @@ class KnowledgeBaseClient:
             # Send file as multipart form data
             files = {"file": (filename, file_content)}
             response = client.post(
-                "/api/knowledge-base/extraction/extract",
+                "/api/knowledge/extraction/extract",
                 files=files,
                 headers=headers
             )
@@ -657,7 +713,7 @@ class KnowledgeBaseClient:
         Returns:
             SupportedFormats with list of supported file extensions
         """
-        data = self._make_request("GET", "/api/knowledge-base/extraction/formats")
+        data = self._make_request("GET", "/api/knowledge/extraction/formats")
         return SupportedFormats(**data)
 
     def is_format_supported(self, filename: str) -> bool:
@@ -672,7 +728,7 @@ class KnowledgeBaseClient:
         """
         data = self._make_request(
             "POST",
-            "/api/knowledge-base/extraction/check-format",
+            "/api/knowledge/extraction/check-format",
             params={"filename": filename}
         )
         return data.get("supported", False)
@@ -694,12 +750,12 @@ class KnowledgeBaseClient:
 
 
 # Singleton instance
-_knowledge_base_client: Optional[KnowledgeBaseClient] = None
+_knowledge_base_client: Optional[KnowledgeClient] = None
 
 
-def get_knowledge_base_client() -> KnowledgeBaseClient:
-    """Get singleton KnowledgeBaseClient instance."""
+def get_knowledge_client() -> KnowledgeClient:
+    """Get singleton KnowledgeClient instance."""
     global _knowledge_base_client
     if _knowledge_base_client is None:
-        _knowledge_base_client = KnowledgeBaseClient()
+        _knowledge_base_client = KnowledgeClient()
     return _knowledge_base_client

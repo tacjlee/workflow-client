@@ -1,8 +1,8 @@
 """
 Tests for workflow-client calling collection APIs.
 
-These tests validate the KnowledgeBaseClient's collection operations against
-the workflow-knowledge-base service.
+These tests validate the KnowledgeClient's collection operations against
+the workflow-knowledge service.
 
 Run with:
     pytest tests/test_collection_api.py -v
@@ -19,7 +19,7 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import KnowledgeBaseClient
+from workflow_client import KnowledgeClient
 from workflow_client.models import CollectionInfo
 from workflow_client.exceptions import (
     KnowledgeBaseConnectionError,
@@ -41,7 +41,7 @@ def knowledge_base_url():
 @pytest.fixture
 def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return KnowledgeBaseClient(base_url=knowledge_base_url, read_timeout=60.0)
+    return KnowledgeClient(base_url=knowledge_base_url, read_timeout=60.0)
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ class TestCollectionAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        return KnowledgeBaseClient(base_url="http://mock-service:8000")
+        return KnowledgeClient(base_url="http://mock-service:8000")
 
     def test_create_collection_request_format(self, mock_client):
         """Test create_collection sends correct request format."""
@@ -101,7 +101,7 @@ class TestCollectionAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "POST"
-            assert call_args[0][1] == "/api/knowledge-base/collections"
+            assert call_args[0][1] == "/api/knowledge/collections"
             assert call_args[1]["json"]["tenant_id"] == "test-tenant"
             assert call_args[1]["json"]["name"] == "mycollection"
             assert call_args[1]["json"]["enable_multivector"] is True
@@ -144,7 +144,7 @@ class TestCollectionAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "GET"
-            assert call_args[0][1] == "/api/knowledge-base/collections/test_collection"
+            assert call_args[0][1] == "/api/knowledge/collections/test_collection"
 
     def test_list_collections_request_format(self, mock_client):
         """Test list_collections sends correct request format."""
@@ -161,7 +161,7 @@ class TestCollectionAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "GET"
-            assert call_args[0][1] == "/api/knowledge-base/collections"
+            assert call_args[0][1] == "/api/knowledge/collections"
             assert call_args[1]["params"]["tenant_id"] == "tenant-1"
 
     def test_list_collections_result_parsing(self, mock_client):
@@ -195,7 +195,7 @@ class TestCollectionAPIUnit:
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "DELETE"
-            assert call_args[0][1] == "/api/knowledge-base/collections/test_collection"
+            assert call_args[0][1] == "/api/knowledge/collections/test_collection"
             assert call_args[1]["params"]["tenant_id"] == "tenant-1"
             assert call_args[1]["params"]["force"] is True
 

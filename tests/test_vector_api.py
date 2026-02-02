@@ -1,8 +1,8 @@
 """
 Tests for workflow-client calling vector APIs.
 
-These tests validate the KnowledgeBaseClient's vector operations against
-the workflow-knowledge-base service.
+These tests validate the KnowledgeClient's vector operations against
+the workflow-knowledge service.
 
 Run with:
     pytest tests/test_vector_api.py -v
@@ -17,7 +17,7 @@ from typing import List
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import KnowledgeBaseClient, MetadataFilter
+from workflow_client import KnowledgeClient, MetadataFilter
 from workflow_client.exceptions import (
     KnowledgeBaseConnectionError,
     KnowledgeBaseAPIError,
@@ -38,7 +38,7 @@ def knowledge_base_url():
 @pytest.fixture
 def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return KnowledgeBaseClient(base_url=knowledge_base_url, read_timeout=60.0)
+    return KnowledgeClient(base_url=knowledge_base_url, read_timeout=60.0)
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ class TestVectorAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        return KnowledgeBaseClient(base_url="http://mock-service:8000")
+        return KnowledgeClient(base_url="http://mock-service:8000")
 
     def test_add_vectors_request_format(self, mock_client):
         """Test add_vectors sends correct request format."""
@@ -89,15 +89,15 @@ class TestVectorAPIUnit:
             mock_request.return_value = {"vector_ids": ["vec-1", "vec-2"]}
 
             vectors = [
-                {"content": "First document", "metadata": {"doc_id": "doc-1"}},
-                {"content": "Second document", "metadata": {"doc_id": "doc-2"}},
+                {"content": "First document", "metadata": {"document_id": "doc-1"}},
+                {"content": "Second document", "metadata": {"document_id": "doc-2"}},
             ]
             result = mock_client.add_vectors("test_collection", vectors)
 
             mock_request.assert_called_once()
             call_args = mock_request.call_args
             assert call_args[0][0] == "POST"
-            assert call_args[0][1] == "/api/knowledge-base/vectors"
+            assert call_args[0][1] == "/api/knowledge/vectors"
             assert call_args[1]["json"]["collection_name"] == "test_collection"
             assert call_args[1]["json"]["auto_embed"] is True
             assert len(call_args[1]["json"]["vectors"]) == 2
@@ -147,7 +147,7 @@ class TestVectorAPIUnit:
 
             result = mock_client.delete_vectors(
                 "test_collection",
-                filters={"tenant_id": "tenant-1", "doc_id": "doc-1"}
+                filters={"tenant_id": "tenant-1", "document_id": "doc-1"}
             )
 
             assert result == 5
@@ -189,7 +189,7 @@ class TestVectorAPIIntegration:
         vectors = [
             {
                 "content": "This is a test document about machine learning.",
-                "metadata": {"doc_id": "doc-1", "category": "ml"}
+                "metadata": {"document_id": "doc-1", "category": "ml"}
             }
         ]
 
@@ -201,9 +201,9 @@ class TestVectorAPIIntegration:
     def test_add_multiple_vectors(self, live_client, test_collection_name):
         """Test adding multiple vectors."""
         vectors = [
-            {"content": "Document about Python programming.", "metadata": {"doc_id": "doc-1"}},
-            {"content": "Document about JavaScript.", "metadata": {"doc_id": "doc-2"}},
-            {"content": "Document about Rust language.", "metadata": {"doc_id": "doc-3"}},
+            {"content": "Document about Python programming.", "metadata": {"document_id": "doc-1"}},
+            {"content": "Document about JavaScript.", "metadata": {"document_id": "doc-2"}},
+            {"content": "Document about Rust language.", "metadata": {"document_id": "doc-3"}},
         ]
 
         vector_ids = live_client.add_vectors(test_collection_name, vectors)
@@ -219,7 +219,7 @@ class TestVectorAPIIntegration:
             {
                 "id": custom_id,
                 "content": "Document with custom ID.",
-                "metadata": {"doc_id": "doc-custom"}
+                "metadata": {"document_id": "doc-custom"}
             }
         ]
 
@@ -234,8 +234,8 @@ class TestVectorAPIIntegration:
                 "content": "Document with full metadata.",
                 "metadata": {
                     "tenant_id": test_tenant_id,
-                    "kb_id": "kb-1",
-                    "doc_id": "doc-1",
+                    "knowledge_id": "kb-1",
+                    "document_id": "doc-1",
                     "file_name": "test.pdf",
                     "user_id": "user-1",
                     "custom_field": "custom_value"
@@ -250,8 +250,8 @@ class TestVectorAPIIntegration:
         """Test deleting vectors by IDs."""
         # First add vectors
         vectors = [
-            {"content": "Document to delete 1.", "metadata": {"doc_id": "del-1"}},
-            {"content": "Document to delete 2.", "metadata": {"doc_id": "del-2"}},
+            {"content": "Document to delete 1.", "metadata": {"document_id": "del-1"}},
+            {"content": "Document to delete 2.", "metadata": {"document_id": "del-2"}},
         ]
         vector_ids = live_client.add_vectors(test_collection_name, vectors)
 
@@ -284,7 +284,7 @@ class TestVectorAPIIntegration:
         vectors = [
             {
                 "content": f"Document number {i} with some meaningful content about topic {i % 10}.",
-                "metadata": {"doc_id": f"doc-{i}", "index": i}
+                "metadata": {"document_id": f"doc-{i}", "index": i}
             }
             for i in range(25)
         ]

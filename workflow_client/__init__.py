@@ -1,13 +1,13 @@
 """
 KnowledgeBase Client
 
-Python client for workflow-knowledge-base service.
+Python client for workflow-knowledge service.
 Provides FeignClient-like interface for RAG operations.
 
 Usage:
-    from workflow_client import KnowledgeBaseClient, MetadataFilter
+    from workflow_client import KnowledgeClient, MetadataFilter
 
-    client = KnowledgeBaseClient()
+    client = KnowledgeClient()
 
     # Create collection
     client.create_collection(tenant_id="tenant-123", name="my-kb")
@@ -17,11 +17,11 @@ Usage:
         collection_name="tenant_tenant_123_my_kb",
         documents=[{"content": "Hello world"}],
         tenant_id="tenant-123",
-        kb_id="kb-789"
+        knowledge_id="kb-789"
     )
 
     # Search
-    results = client.similarity_search(
+    results = client.search(
         collection_name="tenant_tenant_123_my_kb",
         query="hello",
         filters=MetadataFilter(tenant_id="tenant-123")
@@ -43,13 +43,13 @@ Request Interceptors (similar to Java FeignClient):
             headers["X-Trace-Id"] = generate_trace_id()
             return headers
 
-    client = KnowledgeBaseClient(interceptors=[
+    client = KnowledgeClient(interceptors=[
         AuthInterceptor("my-token"),
         TracingInterceptor()
     ])
 """
 
-from .client import KnowledgeBaseClient, get_knowledge_base_client, RequestInterceptor
+from .client import KnowledgeClient, get_knowledge_client, RequestInterceptor
 from .models import (
     MetadataFilter,
     CollectionInfo,
@@ -113,8 +113,8 @@ __version__ = "2.0.0"
 
 __all__ = [
     # KnowledgeBase Client
-    "KnowledgeBaseClient",
-    "get_knowledge_base_client",
+    "KnowledgeClient",
+    "get_knowledge_client",
     "RequestInterceptor",
     # KnowledgeBase Models
     "MetadataFilter",

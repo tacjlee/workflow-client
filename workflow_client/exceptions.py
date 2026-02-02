@@ -1,5 +1,5 @@
 """
-KnowledgeBaseClient Exceptions
+KnowledgeClient Exceptions
 
 Custom exceptions for the knowledge base client.
 """

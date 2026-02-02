@@ -36,7 +36,7 @@ def test_tenant_id():
 
 
 @pytest.fixture
-def test_kb_id():
+def test_knowledge_id():
     """Generate unique knowledge base ID."""
     return f"kb-{uuid.uuid4().hex[:8]}"
 

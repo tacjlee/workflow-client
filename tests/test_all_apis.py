@@ -1,7 +1,7 @@
 """
-Comprehensive end-to-end tests for workflow-client calling ALL workflow-knowledge-base APIs.
+Comprehensive end-to-end tests for workflow-client calling ALL workflow-knowledge APIs.
 
-This test file validates the complete KnowledgeBaseClient functionality by exercising
+This test file validates the complete KnowledgeClient functionality by exercising
 every API endpoint in a realistic workflow scenario.
 
 Install workflow-client from git:
@@ -18,25 +18,25 @@ API Coverage:
        - GET /health
 
     2. Collection APIs
-       - POST /api/knowledge-base/collections (create_collection)
-       - GET /api/knowledge-base/collections/{name} (get_collection_info)
-       - GET /api/knowledge-base/collections (list_collections)
-       - DELETE /api/knowledge-base/collections/{name} (delete_collection)
+       - POST /api/knowledge/collections (create_collection)
+       - GET /api/knowledge/collections/{name} (get_collection_info)
+       - GET /api/knowledge/collections (list_collections)
+       - DELETE /api/knowledge/collections/{name} (delete_collection)
 
     3. Document APIs
-       - POST /api/knowledge-base/documents/process (add_documents)
-       - DELETE /api/knowledge-base/documents (delete_documents)
+       - POST /api/knowledge/documents/process (add_documents)
+       - DELETE /api/knowledge/documents (delete_documents)
 
     4. Vector APIs
-       - POST /api/knowledge-base/vectors (add_vectors)
-       - DELETE /api/knowledge-base/vectors (delete_vectors)
+       - POST /api/knowledge/vectors (add_vectors)
+       - DELETE /api/knowledge/vectors (delete_vectors)
 
     5. Embedding APIs
-       - POST /api/knowledge-base/embeddings (generate_embeddings)
+       - POST /api/knowledge/embeddings (generate_embeddings)
 
     6. Search APIs
-       - POST /api/knowledge-base/search/similarity (similarity_search)
-       - POST /api/knowledge-base/search/rag (rag_retrieval)
+       - POST /api/knowledge/search (search)
+       - POST /api/knowledge/search/rag (rag_retrieval)
 """
 
 import pytest
@@ -48,7 +48,7 @@ from typing import List, Dict, Any
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import KnowledgeBaseClient, MetadataFilter
+from workflow_client import KnowledgeClient, MetadataFilter
 from workflow_client.models import (
     CollectionInfo,
     SearchResult,
@@ -76,7 +76,7 @@ def knowledge_base_url():
 @pytest.fixture
 def client(knowledge_base_url):
     """Create a client for tests."""
-    return KnowledgeBaseClient(base_url=knowledge_base_url, read_timeout=120.0)
+    return KnowledgeClient(base_url=knowledge_base_url, read_timeout=120.0)
 
 
 @pytest.fixture
@@ -86,7 +86,7 @@ def test_tenant_id():
 
 
 @pytest.fixture
-def test_kb_id():
+def test_knowledge_id():
     """Generate unique knowledge base ID."""
     return f"kb-{uuid.uuid4().hex[:8]}"
 
@@ -123,31 +123,31 @@ SAMPLE_DOCUMENTS = [
                    "applications that learn from data and improve their accuracy over time without "
                    "being explicitly programmed. ML algorithms use historical data as input to predict "
                    "new output values.",
-        "metadata": {"doc_id": "ml-intro", "category": "ai", "topic": "machine-learning"}
+        "metadata": {"document_id": "ml-intro", "category": "ai", "topic": "machine-learning"}
     },
     {
         "content": "Deep learning is a subset of machine learning that uses neural networks with "
                    "many layers (deep neural networks) to analyze various factors of data. Deep learning "
                    "enables the analysis of unstructured data such as images, audio, and text.",
-        "metadata": {"doc_id": "dl-intro", "category": "ai", "topic": "deep-learning"}
+        "metadata": {"document_id": "dl-intro", "category": "ai", "topic": "deep-learning"}
     },
     {
         "content": "Natural Language Processing (NLP) is a field of AI that gives machines the ability "
                    "to read, understand, and derive meaning from human languages. NLP combines "
                    "computational linguistics with statistical and machine learning models.",
-        "metadata": {"doc_id": "nlp-intro", "category": "ai", "topic": "nlp"}
+        "metadata": {"document_id": "nlp-intro", "category": "ai", "topic": "nlp"}
     },
     {
         "content": "Vector databases are specialized databases designed to store, index, and query "
                    "high-dimensional vectors efficiently. They are essential for similarity search "
                    "applications, recommendation systems, and AI/ML workloads.",
-        "metadata": {"doc_id": "vecdb-intro", "category": "database", "topic": "vector-db"}
+        "metadata": {"document_id": "vecdb-intro", "category": "database", "topic": "vector-db"}
     },
     {
         "content": "Retrieval Augmented Generation (RAG) is an AI framework that combines information "
                    "retrieval with generative AI models. RAG retrieves relevant documents from a "
                    "knowledge base and uses them as context for generating accurate responses.",
-        "metadata": {"doc_id": "rag-intro", "category": "ai", "topic": "rag"}
+        "metadata": {"document_id": "rag-intro", "category": "ai", "topic": "rag"}
     },
 ]
 
@@ -159,7 +159,7 @@ SAMPLE_DOCUMENTS = [
 @requires_service
 class TestAllAPIsIntegration:
     """
-    Comprehensive integration tests that exercise ALL workflow-knowledge-base APIs.
+    Comprehensive integration tests that exercise ALL workflow-knowledge APIs.
 
     Test workflow:
     1. Health Check
@@ -178,12 +178,12 @@ class TestAllAPIsIntegration:
 
     @pytest.fixture(autouse=True)
     def setup_test_environment(
-        self, client, test_tenant_id, test_kb_id, collection_suffix
+        self, client, test_tenant_id, test_knowledge_id, collection_suffix
     ):
         """Set up test environment and clean up after."""
         self.client = client
         self.tenant_id = test_tenant_id
-        self.kb_id = test_kb_id
+        self.knowledge_id = test_knowledge_id
         self.collection_suffix = collection_suffix
         self.sanitized_tenant = test_tenant_id.replace('-', '_')
         self.collection_name = f"tenant_{self.sanitized_tenant}_{collection_suffix}"
@@ -213,7 +213,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_02_create_collection(self):
-        """Test create collection API - POST /api/knowledge-base/collections"""
+        """Test create collection API - POST /api/knowledge/collections"""
         result = self.client.create_collection(
             tenant_id=self.tenant_id,
             name=self.collection_suffix,
@@ -227,7 +227,7 @@ class TestAllAPIsIntegration:
         print(f"  Created collection: {result.name}")
 
     def test_03_get_collection_info(self):
-        """Test get collection info API - GET /api/knowledge-base/collections/{name}"""
+        """Test get collection info API - GET /api/knowledge/collections/{name}"""
         # Create collection first
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -243,7 +243,7 @@ class TestAllAPIsIntegration:
         print(f"  Collection info: {info.name}, vectors: {info.vectors_count}")
 
     def test_04_list_collections(self):
-        """Test list collections API - GET /api/knowledge-base/collections"""
+        """Test list collections API - GET /api/knowledge/collections"""
         # Create collection first
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -268,7 +268,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_05_generate_embeddings(self):
-        """Test generate embeddings API - POST /api/knowledge-base/embeddings"""
+        """Test generate embeddings API - POST /api/knowledge/embeddings"""
         texts = [
             "Machine learning algorithms",
             "Natural language processing",
@@ -288,7 +288,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_06_add_vectors(self):
-        """Test add vectors API - POST /api/knowledge-base/vectors"""
+        """Test add vectors API - POST /api/knowledge/vectors"""
         # Create collection first
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -318,7 +318,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_07_add_documents(self):
-        """Test add documents API - POST /api/knowledge-base/documents/process"""
+        """Test add documents API - POST /api/knowledge/documents/process"""
         # Create collection first
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -332,7 +332,7 @@ class TestAllAPIsIntegration:
             collection_name=self.collection_name,
             documents=documents,
             tenant_id=self.tenant_id,
-            kb_id=self.kb_id,
+            knowledge_id=self.knowledge_id,
             chunk_size=500,
             chunk_overlap=50
         )
@@ -346,8 +346,8 @@ class TestAllAPIsIntegration:
     # API 8: Search API - Similarity
     # -------------------------------------------------------------------------
 
-    def test_08_similarity_search(self):
-        """Test similarity search API - POST /api/knowledge-base/search/similarity"""
+    def test_08_search(self):
+        """Test similarity search API - POST /api/knowledge/search"""
         # Setup: create collection and add documents
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -364,7 +364,7 @@ class TestAllAPIsIntegration:
         time.sleep(1)  # Wait for indexing
 
         # Search
-        results = self.client.similarity_search(
+        results = self.client.search(
             collection_name=self.collection_name,
             query="What is machine learning and artificial intelligence?",
             top_k=5,
@@ -380,7 +380,7 @@ class TestAllAPIsIntegration:
             assert scores == sorted(scores, reverse=True)
         print(f"  Search returned {len(results)} results, top score: {results[0].score:.3f}")
 
-    def test_08b_similarity_search_with_filters(self):
+    def test_08b_search_with_filters(self):
         """Test similarity search with metadata filters."""
         # Setup: create collection and add documents
         self.client.create_collection(
@@ -398,7 +398,7 @@ class TestAllAPIsIntegration:
 
         # Search with filter
         filters = MetadataFilter(tenant_id=self.tenant_id)
-        results = self.client.similarity_search(
+        results = self.client.search(
             collection_name=self.collection_name,
             query="neural networks",
             top_k=3,
@@ -413,7 +413,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_09_rag_retrieval(self):
-        """Test RAG retrieval API - POST /api/knowledge-base/search/rag"""
+        """Test RAG retrieval API - POST /api/knowledge/search/rag"""
         # Setup: create collection and add documents
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -474,7 +474,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_10_delete_documents(self):
-        """Test delete documents API - DELETE /api/knowledge-base/documents"""
+        """Test delete documents API - DELETE /api/knowledge/documents"""
         # Setup
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -483,20 +483,20 @@ class TestAllAPIsIntegration:
         )
 
         documents = [
-            {"content": "Document to delete.", "metadata": {"doc_id": "delete-me"}}
+            {"content": "Document to delete.", "metadata": {"document_id": "delete-me"}}
         ]
         self.client.add_documents(
             collection_name=self.collection_name,
             documents=documents,
             tenant_id=self.tenant_id,
-            kb_id=self.kb_id
+            knowledge_id=self.knowledge_id
         )
         time.sleep(1)
 
         # Delete
         deleted_count = self.client.delete_documents(
             collection_name=self.collection_name,
-            doc_id="delete-me"
+            document_id="delete-me"
         )
 
         # Filter-based deletes return -1 (Qdrant doesn't provide count)
@@ -508,7 +508,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_11_delete_vectors(self):
-        """Test delete vectors API - DELETE /api/knowledge-base/vectors"""
+        """Test delete vectors API - DELETE /api/knowledge/vectors"""
         # Setup
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -537,7 +537,7 @@ class TestAllAPIsIntegration:
     # -------------------------------------------------------------------------
 
     def test_12_delete_collection(self):
-        """Test delete collection API - DELETE /api/knowledge-base/collections/{name}"""
+        """Test delete collection API - DELETE /api/knowledge/collections/{name}"""
         # Create collection
         self.client.create_collection(
             tenant_id=self.tenant_id,
@@ -575,7 +575,7 @@ class TestCompleteWorkflow:
         """Test complete RAG workflow from creation to cleanup."""
         # Generate unique identifiers
         tenant_id = f"workflow-{uuid.uuid4().hex[:8]}"
-        kb_id = f"kb-{uuid.uuid4().hex[:8]}"
+        knowledge_id = f"kb-{uuid.uuid4().hex[:8]}"
         sanitized = tenant_id.replace('-', '_')
         collection_name = f"tenant_{sanitized}_workflow"
 
@@ -611,7 +611,7 @@ class TestCompleteWorkflow:
                 collection_name=collection_name,
                 documents=SAMPLE_DOCUMENTS,
                 tenant_id=tenant_id,
-                kb_id=kb_id
+                knowledge_id=knowledge_id
             )
             assert result.status == "processed"
             print(f"   Added {len(SAMPLE_DOCUMENTS)} documents, {result.chunks_count} chunks")
@@ -628,7 +628,7 @@ class TestCompleteWorkflow:
 
             # Step 6: Similarity Search
             print("\n6. Performing similarity search...")
-            search_results = client.similarity_search(
+            search_results = client.search(
                 collection_name=collection_name,
                 query="What is machine learning?",
                 top_k=3
@@ -659,7 +659,7 @@ class TestCompleteWorkflow:
             # Step 9: Search with filters
             print("\n9. Searching with metadata filter...")
             filters = MetadataFilter(tenant_id=tenant_id)
-            filtered_results = client.similarity_search(
+            filtered_results = client.search(
                 collection_name=collection_name,
                 query="artificial intelligence",
                 top_k=5,
@@ -671,7 +671,7 @@ class TestCompleteWorkflow:
             print("\n10. Deleting specific document...")
             deleted = client.delete_documents(
                 collection_name=collection_name,
-                doc_id="ml-intro"
+                document_id="ml-intro"
             )
             print(f"    Deleted {deleted} chunks")
 
@@ -734,64 +734,64 @@ class TestAPICoverage:
             # Create collection
             coll = client.create_collection(tenant_id, "coverage")
             assert isinstance(coll, CollectionInfo)
-            apis_tested.append("POST /api/knowledge-base/collections")
+            apis_tested.append("POST /api/knowledge/collections")
 
             # Get collection
             info = client.get_collection_info(collection_name)
             assert isinstance(info, CollectionInfo)
-            apis_tested.append("GET /api/knowledge-base/collections/{name}")
+            apis_tested.append("GET /api/knowledge/collections/{name}")
 
             # List collections
             colls = client.list_collections()
             assert isinstance(colls, list)
-            apis_tested.append("GET /api/knowledge-base/collections")
+            apis_tested.append("GET /api/knowledge/collections")
 
             # Generate embeddings
             embs = client.generate_embeddings(["test"])
             assert len(embs) == 1
-            apis_tested.append("POST /api/knowledge-base/embeddings")
+            apis_tested.append("POST /api/knowledge/embeddings")
 
             # Add vectors
             vids = client.add_vectors(collection_name, [{"content": "test", "metadata": {}}])
             assert len(vids) == 1
-            apis_tested.append("POST /api/knowledge-base/vectors")
+            apis_tested.append("POST /api/knowledge/vectors")
 
             time.sleep(1)
 
             # Similarity search
-            results = client.similarity_search(collection_name, "test", top_k=1)
+            results = client.search(collection_name, "test", top_k=1)
             assert isinstance(results, list)
-            apis_tested.append("POST /api/knowledge-base/search/similarity")
+            apis_tested.append("POST /api/knowledge/search")
 
             # RAG retrieval
             rag = client.rag_retrieval(collection_name, "test", top_k=1)
             assert isinstance(rag, RAGContext)
-            apis_tested.append("POST /api/knowledge-base/search/rag")
+            apis_tested.append("POST /api/knowledge/search/rag")
 
             # Add documents
             doc_result = client.add_documents(
-                collection_name, [{"content": "doc", "metadata": {"doc_id": "d1"}}],
+                collection_name, [{"content": "doc", "metadata": {"document_id": "d1"}}],
                 tenant_id, "proj", "kb"
             )
             assert isinstance(doc_result, DocumentProcessResult)
-            apis_tested.append("POST /api/knowledge-base/documents/process")
+            apis_tested.append("POST /api/knowledge/documents/process")
 
             time.sleep(1)
 
             # Delete documents
-            del_docs = client.delete_documents(collection_name, doc_id="d1")
+            del_docs = client.delete_documents(collection_name, document_id="d1")
             assert isinstance(del_docs, int)
-            apis_tested.append("DELETE /api/knowledge-base/documents")
+            apis_tested.append("DELETE /api/knowledge/documents")
 
             # Delete vectors
             del_vecs = client.delete_vectors(collection_name, vector_ids=vids)
             assert isinstance(del_vecs, int)
-            apis_tested.append("DELETE /api/knowledge-base/vectors")
+            apis_tested.append("DELETE /api/knowledge/vectors")
 
             # Delete collection
             deleted = client.delete_collection(collection_name, force=True)
             assert deleted is True
-            apis_tested.append("DELETE /api/knowledge-base/collections/{name}")
+            apis_tested.append("DELETE /api/knowledge/collections/{name}")
 
         finally:
             try:

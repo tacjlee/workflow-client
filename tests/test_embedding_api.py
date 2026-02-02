@@ -1,14 +1,14 @@
 """
 Tests for workflow-client calling embedding_service APIs.
 
-These tests validate the KnowledgeBaseClient's embedding operations against
-the workflow-knowledge-base service.
+These tests validate the KnowledgeClient's embedding operations against
+the workflow-knowledge service.
 
 Run with:
     pytest tests/test_embedding_api.py -v
 
 Requirements:
-    - workflow-knowledge-base service running at http://localhost:8010
+    - workflow-knowledge service running at http://localhost:8010
     - Or set KNOWLEDGE_BASE_SERVICE_URL environment variable
 """
 
@@ -21,7 +21,7 @@ from typing import List
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from workflow_client import KnowledgeBaseClient
+from workflow_client import KnowledgeClient
 from workflow_client.exceptions import (
     KnowledgeBaseConnectionError,
     KnowledgeBaseTimeoutError,
@@ -39,7 +39,7 @@ class TestEmbeddingAPIUnit:
     @pytest.fixture
     def mock_client(self):
         """Create a client with mocked HTTP."""
-        client = KnowledgeBaseClient(base_url="http://mock-service:8000")
+        client = KnowledgeClient(base_url="http://mock-service:8000")
         return client
 
     def test_generate_embeddings_request_format(self, mock_client):
@@ -57,7 +57,7 @@ class TestEmbeddingAPIUnit:
             # Verify request was made with correct params
             mock_request.assert_called_once_with(
                 "POST",
-                "/api/knowledge-base/embeddings",
+                "/api/knowledge/embeddings",
                 json={
                     "texts": texts,
                     "batch_size": 32,
@@ -122,7 +122,7 @@ class TestEmbeddingAPIRetry:
 
     def test_retry_on_connection_error(self):
         """Test that connection errors trigger retries."""
-        client = KnowledgeBaseClient(base_url="http://mock-service:8000", max_retries=3)
+        client = KnowledgeClient(base_url="http://mock-service:8000", max_retries=3)
 
         call_count = 0
 
@@ -141,7 +141,7 @@ class TestEmbeddingAPIRetry:
 
     def test_max_retries_exceeded(self):
         """Test that exceeding max retries raises exception."""
-        client = KnowledgeBaseClient(base_url="http://mock-service:8000", max_retries=2)
+        client = KnowledgeClient(base_url="http://mock-service:8000", max_retries=2)
 
         with patch.object(client, '_make_request') as mock_request:
             mock_request.side_effect = KnowledgeBaseConnectionError("Connection failed")
@@ -163,7 +163,7 @@ def knowledge_base_url():
 @pytest.fixture
 def live_client(knowledge_base_url):
     """Create a client for integration tests."""
-    return KnowledgeBaseClient(base_url=knowledge_base_url, read_timeout=60.0)
+    return KnowledgeClient(base_url=knowledge_base_url, read_timeout=60.0)
 
 
 def service_available(url: str) -> bool:
