@@ -8,19 +8,23 @@ cd "$SCRIPT_DIR"
 
 echo "=== Building workflow-client ==="
 
-# Clean previous builds
+# Clean previous builds (ignore errors for permission issues)
 echo "Cleaning previous builds..."
-rm -rf dist/ build/ *.egg-info workflow_client.egg-info
+rm -rf dist/ build/ *.egg-info workflow_client.egg-info 2>/dev/null || true
 
-# Ensure build tool is installed
-if ! python -m pip show build &>/dev/null; then
-    echo "Installing build tool..."
-    python -m pip install build
+# Create venv if it doesn't exist
+if [ ! -d ".venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv .venv
 fi
+
+# Install build tool
+echo "Installing build tool..."
+.venv/bin/pip install --upgrade pip build -q
 
 # Build the package
 echo "Building package..."
-python -m build
+.venv/bin/python -m build
 
 echo ""
 echo "=== Build complete ==="
