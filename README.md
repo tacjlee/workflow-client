@@ -35,7 +35,7 @@ client.add_documents(
         {"content": "Document content here", "metadata": {"file_name": "doc.pdf"}}
     ],
     tenant_id="tenant-123",
-    kb_id="kb-789"
+    knowledge_id="kb-789"
 )
 
 # Search with tenant filtering
@@ -50,7 +50,7 @@ results = client.search(
 context = client.rag_retrieval(
     collection_name="tenant_tenant_123_knowledge_base",
     query="What is...",
-    filters=MetadataFilter(tenant_id="tenant-123", kb_id="kb-789")
+    filters=MetadataFilter(tenant_id="tenant-123", knowledge_id="kb-789")
 )
 print(context.combined_context)
 ```
@@ -62,14 +62,14 @@ print(context.combined_context)
 The client discovers the knowledge base service URL in this order:
 
 1. **Consul** (if enabled and available)
-2. **Environment variable**: `KNOWLEDGE_BASE_SERVICE_URL`
+2. **Environment variable**: `KNOWLEDGE_SERVICE_URL`
 3. **Default**: `http://workflow-knowledge:8000`
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `KNOWLEDGE_BASE_SERVICE_URL` | `http://workflow-knowledge:8000` | Direct service URL |
+| `KNOWLEDGE_SERVICE_URL` | `http://workflow-knowledge:8000` | Direct service URL |
 | `CONSUL_ENABLED` | `true` | Enable Consul discovery |
 | `CONSUL_HOST` | `localhost` | Consul host |
 | `CONSUL_PORT` | `8500` | Consul port |
@@ -84,9 +84,9 @@ client = KnowledgeClient(base_url="http://localhost:8000")
 ## Data Hierarchy
 
 ```
-tenant_id    -> Collection isolation
-  kb_id      -> Metadata filter
-    doc_id   -> Metadata filter
+tenant_id      -> Collection isolation
+  knowledge_id -> Metadata filter
+    document_id -> Metadata filter
 ```
 
 ## API Reference
@@ -115,7 +115,7 @@ client.add_documents(
     collection_name,
     documents,
     tenant_id,
-    kb_id,
+    knowledge_id,
     user_id=None,
     chunk_size=1000,
     chunk_overlap=200
@@ -125,8 +125,8 @@ client.add_documents(
 client.delete_documents(
     collection_name,
     tenant_id=None,
-    kb_id=None,
-    doc_id=None,
+    knowledge_id=None,
+    document_id=None,
     file_name=None
 )
 ```
@@ -163,27 +163,29 @@ embeddings = client.generate_embeddings(texts, batch_size=32)
 
 ```python
 from workflow_client import (
-    KnowledgeBaseError,
-    KnowledgeBaseConnectionError,
-    KnowledgeBaseTimeoutError,
-    KnowledgeBaseAPIError,
-    KnowledgeBaseNotFoundError,
-    KnowledgeBaseValidationError,
+    KnowledgeError,
+    KnowledgeConnectionError,
+    KnowledgeTimeoutError,
+    KnowledgeAPIError,
+    KnowledgeNotFoundError,
+    KnowledgeValidationError,
 )
 
 try:
     client.search(...)
-except KnowledgeBaseConnectionError:
+except KnowledgeConnectionError:
     # Service unreachable
-except KnowledgeBaseTimeoutError:
+except KnowledgeTimeoutError:
     # Request timed out
-except KnowledgeBaseNotFoundError:
+except KnowledgeNotFoundError:
     # Collection/resource not found
-except KnowledgeBaseValidationError:
+except KnowledgeValidationError:
     # Invalid request
-except KnowledgeBaseAPIError as e:
+except KnowledgeAPIError as e:
     print(e.status_code, e.response_body)
 ```
+
+> **Backwards Compatibility**: The old `KnowledgeBase*` exception names are still available as aliases but deprecated.
 
 ## Testing
 
@@ -200,7 +202,7 @@ pip install -e ".[dev]"
 
 ```bash
 # Set service URL (default: http://localhost:8010)
-export KNOWLEDGE_BASE_SERVICE_URL=http://localhost:8010
+export KNOWLEDGE_SERVICE_URL=http://localhost:8010
 
 # Run all tests
 pytest tests/ -v
