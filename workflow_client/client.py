@@ -79,12 +79,12 @@ from .models import (
     SupportedFormats,
 )
 from .exceptions import (
-    KnowledgeBaseConnectionError,
-    KnowledgeBaseTimeoutError,
-    KnowledgeBaseAPIError,
-    KnowledgeBaseNotFoundError,
-    KnowledgeBaseValidationError,
-    KnowledgeBaseCircuitBreakerError,
+    KnowledgeConnectionError,
+    KnowledgeTimeoutError,
+    KnowledgeAPIError,
+    KnowledgeNotFoundError,
+    KnowledgeValidationError,
+    KnowledgeCircuitBreakerError,
 )
 from .service_discovery import ServiceDiscovery
 
@@ -100,7 +100,7 @@ def retry_with_backoff(max_retries: int = 3, base_delay: float = 0.5):
             for attempt in range(max_retries):
                 try:
                     return func(self, *args, **kwargs)
-                except (KnowledgeBaseConnectionError, KnowledgeBaseTimeoutError) as e:
+                except (KnowledgeConnectionError, KnowledgeTimeoutError) as e:
                     last_exception = e
                     if attempt < max_retries - 1:
                         delay = base_delay * (2 ** attempt)
@@ -160,7 +160,7 @@ class KnowledgeClient:
         """Get base URL from service discovery or fallback."""
         if self._base_url:
             return self._base_url
-        return self._service_discovery.get_knowledge_base_service_url()
+        return self._service_discovery.get_knowledge_service_url()
 
     def _get_client(self) -> httpx.Client:
         """Get or create HTTP client with connection pooling."""
@@ -177,19 +177,19 @@ class KnowledgeClient:
         if response.status_code in (200, 201):
             return response.json()
         elif response.status_code == 404:
-            raise KnowledgeBaseNotFoundError(f"Resource not found: {response.text}")
+            raise KnowledgeNotFoundError(f"Resource not found: {response.text}")
         elif response.status_code == 422:
-            raise KnowledgeBaseValidationError(f"Validation error: {response.text}")
+            raise KnowledgeValidationError(f"Validation error: {response.text}")
         elif response.status_code == 503:
-            raise KnowledgeBaseCircuitBreakerError(f"Service unavailable (circuit breaker open): {response.text}")
+            raise KnowledgeCircuitBreakerError(f"Service unavailable (circuit breaker open): {response.text}")
         elif response.status_code >= 500:
-            raise KnowledgeBaseAPIError(
+            raise KnowledgeAPIError(
                 f"Server error: {response.status_code}",
                 status_code=response.status_code,
                 response_body=response.text
             )
         else:
-            raise KnowledgeBaseAPIError(
+            raise KnowledgeAPIError(
                 f"API error: {response.status_code}",
                 status_code=response.status_code,
                 response_body=response.text
@@ -237,9 +237,9 @@ class KnowledgeClient:
             )
             return self._handle_response(response)
         except httpx.ConnectError as e:
-            raise KnowledgeBaseConnectionError(f"Connection failed: {e}")
+            raise KnowledgeConnectionError(f"Connection failed: {e}")
         except httpx.TimeoutException as e:
-            raise KnowledgeBaseTimeoutError(f"Request timed out: {e}")
+            raise KnowledgeTimeoutError(f"Request timed out: {e}")
 
     def close(self):
         """Close the HTTP client."""
@@ -681,8 +681,8 @@ class KnowledgeClient:
             ExtractionResult with extracted text content
 
         Raises:
-            KnowledgeBaseValidationError: If file format is not supported
-            KnowledgeBaseAPIError: If extraction fails
+            KnowledgeValidationError: If file format is not supported
+            KnowledgeAPIError: If extraction fails
         """
         try:
             client = self._get_client()
@@ -701,9 +701,9 @@ class KnowledgeClient:
             data = self._handle_response(response)
             return ExtractionResult(**data)
         except httpx.ConnectError as e:
-            raise KnowledgeBaseConnectionError(f"Connection failed: {e}")
+            raise KnowledgeConnectionError(f"Connection failed: {e}")
         except httpx.TimeoutException as e:
-            raise KnowledgeBaseTimeoutError(f"Request timed out: {e}")
+            raise KnowledgeTimeoutError(f"Request timed out: {e}")
 
     @retry_with_backoff(max_retries=3)
     def get_supported_formats(self) -> SupportedFormats:
@@ -750,12 +750,12 @@ class KnowledgeClient:
 
 
 # Singleton instance
-_knowledge_base_client: Optional[KnowledgeClient] = None
+_knowledge_client: Optional[KnowledgeClient] = None
 
 
 def get_knowledge_client() -> KnowledgeClient:
     """Get singleton KnowledgeClient instance."""
-    global _knowledge_base_client
-    if _knowledge_base_client is None:
-        _knowledge_base_client = KnowledgeClient()
-    return _knowledge_base_client
+    global _knowledge_client
+    if _knowledge_client is None:
+        _knowledge_client = KnowledgeClient()
+    return _knowledge_client

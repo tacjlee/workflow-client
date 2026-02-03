@@ -18,7 +18,7 @@ class ServiceDiscovery:
 
     Hierarchy:
     1. Consul service catalog (if available)
-    2. KNOWLEDGE_BASE_SERVICE_URL environment variable
+    2. KNOWLEDGE_SERVICE_URL environment variable
     3. Default URL
     """
 
@@ -71,13 +71,13 @@ class ServiceDiscovery:
 
         return None
 
-    def get_knowledge_base_service_url(self) -> str:
+    def get_knowledge_service_url(self) -> str:
         """
-        Get knowledge-base-service URL.
+        Get workflow-knowledge service URL.
 
         Fallback hierarchy:
         1. Consul service catalog
-        2. KNOWLEDGE_BASE_SERVICE_URL environment variable
+        2. KNOWLEDGE_SERVICE_URL environment variable
         3. Default URL
         """
         # Check cache
@@ -89,20 +89,20 @@ class ServiceDiscovery:
         if url:
             self._cached_url = url
             self._cache_timestamp = time.time()
-            logger.debug(f"Knowledge base service URL from Consul: {url}")
+            logger.debug(f"Knowledge service URL from Consul: {url}")
             return url
 
         # Try environment variable
-        env_url = os.getenv("KNOWLEDGE_BASE_SERVICE_URL")
+        env_url = os.getenv("KNOWLEDGE_SERVICE_URL")
         if env_url:
             self._cached_url = env_url
             self._cache_timestamp = time.time()
-            logger.debug(f"Knowledge base service URL from env: {env_url}")
+            logger.debug(f"Knowledge service URL from env: {env_url}")
             return env_url
 
         # Default
         default_url = "http://workflow-knowledge:8000"
-        logger.debug(f"Using default knowledge base service URL: {default_url}")
+        logger.debug(f"Using default knowledge service URL: {default_url}")
         return default_url
 
     def invalidate_cache(self):

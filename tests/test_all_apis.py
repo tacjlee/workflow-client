@@ -56,10 +56,10 @@ from workflow_client.models import (
     DocumentProcessResult,
 )
 from workflow_client.exceptions import (
-    KnowledgeBaseConnectionError,
-    KnowledgeBaseAPIError,
-    KnowledgeBaseNotFoundError,
-    KnowledgeBaseValidationError,
+    KnowledgeConnectionError,
+    KnowledgeAPIError,
+    KnowledgeNotFoundError,
+    KnowledgeValidationError,
 )
 
 
@@ -550,7 +550,7 @@ class TestAllAPIsIntegration:
         assert result is True
 
         # Verify deleted
-        with pytest.raises(KnowledgeBaseNotFoundError):
+        with pytest.raises(KnowledgeNotFoundError):
             self.client.get_collection_info(self.collection_name)
         print(f"  Deleted collection: {self.collection_name}")
 
@@ -694,7 +694,7 @@ class TestCompleteWorkflow:
             print(f"    Deleted collection: {collection_name}")
 
             # Verify cleanup
-            with pytest.raises(KnowledgeBaseNotFoundError):
+            with pytest.raises(KnowledgeNotFoundError):
                 client.get_collection_info(collection_name)
             print("    Verified collection is deleted")
 

@@ -21,9 +21,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from workflow_client import KnowledgeClient, MetadataFilter
 from workflow_client.models import SearchResult, RAGContext
 from workflow_client.exceptions import (
-    KnowledgeBaseConnectionError,
-    KnowledgeBaseAPIError,
-    KnowledgeBaseNotFoundError,
+    KnowledgeConnectionError,
+    KnowledgeAPIError,
+    KnowledgeNotFoundError,
 )
 
 
@@ -267,7 +267,7 @@ class TestSearchAPIIntegration:
                 name="search",
                 enable_multivector=True
             )
-        except KnowledgeBaseAPIError:
+        except KnowledgeAPIError:
             pass  # Collection might already exist
 
         # Add test documents with tenant metadata

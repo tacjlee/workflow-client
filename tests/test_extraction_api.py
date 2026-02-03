@@ -9,8 +9,8 @@ from workflow_client import (
     KnowledgeClient,
     ExtractionResult,
     SupportedFormats,
-    KnowledgeBaseValidationError,
-    KnowledgeBaseAPIError,
+    KnowledgeValidationError,
+    KnowledgeAPIError,
 )
 
 
@@ -55,7 +55,7 @@ class TestExtractionAPI:
 
             client = KnowledgeClient(base_url="http://test:8000")
 
-            with pytest.raises(KnowledgeBaseValidationError):
+            with pytest.raises(KnowledgeValidationError):
                 client.extract_text(b"some content", "test.xyz")
 
     def test_get_supported_formats(self):

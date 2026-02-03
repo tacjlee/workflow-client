@@ -23,9 +23,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from workflow_client import KnowledgeClient
 from workflow_client.exceptions import (
-    KnowledgeBaseConnectionError,
-    KnowledgeBaseTimeoutError,
-    KnowledgeBaseAPIError,
+    KnowledgeConnectionError,
+    KnowledgeTimeoutError,
+    KnowledgeAPIError,
 )
 
 
@@ -91,29 +91,29 @@ class TestEmbeddingAPIUnit:
     def test_generate_embeddings_connection_error(self, mock_client):
         """Test generate_embeddings handles connection errors."""
         with patch.object(mock_client, '_make_request') as mock_request:
-            mock_request.side_effect = KnowledgeBaseConnectionError("Connection refused")
+            mock_request.side_effect = KnowledgeConnectionError("Connection refused")
 
-            with pytest.raises(KnowledgeBaseConnectionError):
+            with pytest.raises(KnowledgeConnectionError):
                 mock_client.generate_embeddings(["test"])
 
     def test_generate_embeddings_timeout_error(self, mock_client):
         """Test generate_embeddings handles timeout errors."""
         with patch.object(mock_client, '_make_request') as mock_request:
-            mock_request.side_effect = KnowledgeBaseTimeoutError("Request timed out")
+            mock_request.side_effect = KnowledgeTimeoutError("Request timed out")
 
-            with pytest.raises(KnowledgeBaseTimeoutError):
+            with pytest.raises(KnowledgeTimeoutError):
                 mock_client.generate_embeddings(["test"])
 
     def test_generate_embeddings_api_error(self, mock_client):
         """Test generate_embeddings handles API errors."""
         with patch.object(mock_client, '_make_request') as mock_request:
-            mock_request.side_effect = KnowledgeBaseAPIError(
+            mock_request.side_effect = KnowledgeAPIError(
                 "Server error",
                 status_code=500,
                 response_body="Internal error"
             )
 
-            with pytest.raises(KnowledgeBaseAPIError):
+            with pytest.raises(KnowledgeAPIError):
                 mock_client.generate_embeddings(["test"])
 
 
@@ -130,7 +130,7 @@ class TestEmbeddingAPIRetry:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise KnowledgeBaseConnectionError("Connection failed")
+                raise KnowledgeConnectionError("Connection failed")
             return {"embeddings": [[0.1] * 1024]}
 
         with patch.object(client, '_make_request', side_effect=mock_request):
@@ -144,9 +144,9 @@ class TestEmbeddingAPIRetry:
         client = KnowledgeClient(base_url="http://mock-service:8000", max_retries=2)
 
         with patch.object(client, '_make_request') as mock_request:
-            mock_request.side_effect = KnowledgeBaseConnectionError("Connection failed")
+            mock_request.side_effect = KnowledgeConnectionError("Connection failed")
 
-            with pytest.raises(KnowledgeBaseConnectionError):
+            with pytest.raises(KnowledgeConnectionError):
                 client.generate_embeddings(["test"])
 
 

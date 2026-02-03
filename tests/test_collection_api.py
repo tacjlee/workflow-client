@@ -22,9 +22,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from workflow_client import KnowledgeClient
 from workflow_client.models import CollectionInfo
 from workflow_client.exceptions import (
-    KnowledgeBaseConnectionError,
-    KnowledgeBaseAPIError,
-    KnowledgeBaseNotFoundError,
+    KnowledgeConnectionError,
+    KnowledgeAPIError,
+    KnowledgeNotFoundError,
 )
 
 
@@ -306,7 +306,7 @@ class TestCollectionAPIIntegration:
 
     def test_get_collection_info_not_found(self, live_client):
         """Test getting info for non-existent collection."""
-        with pytest.raises(KnowledgeBaseNotFoundError):
+        with pytest.raises(KnowledgeNotFoundError):
             live_client.get_collection_info("nonexistent_collection_xyz123")
 
     def test_list_collections_all(self, live_client, test_tenant_id):
@@ -370,7 +370,7 @@ class TestCollectionAPIIntegration:
         assert result is True
 
         # Verify it's gone
-        with pytest.raises(KnowledgeBaseNotFoundError):
+        with pytest.raises(KnowledgeNotFoundError):
             live_client.get_collection_info(full_name)
 
     def test_delete_collection_with_tenant(self, live_client, test_tenant_id):
@@ -440,7 +440,7 @@ class TestCollectionAPIIntegration:
         assert deleted is True
 
         # 5. Verify gone
-        with pytest.raises(KnowledgeBaseNotFoundError):
+        with pytest.raises(KnowledgeNotFoundError):
             live_client.get_collection_info(full_name)
 
 

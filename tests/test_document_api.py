@@ -23,10 +23,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from workflow_client import KnowledgeClient
 from workflow_client.models import DocumentProcessResult, DocumentChunk
 from workflow_client.exceptions import (
-    KnowledgeBaseConnectionError,
-    KnowledgeBaseAPIError,
-    KnowledgeBaseNotFoundError,
-    KnowledgeBaseValidationError,
+    KnowledgeConnectionError,
+    KnowledgeAPIError,
+    KnowledgeNotFoundError,
+    KnowledgeValidationError,
 )
 
 
@@ -245,7 +245,7 @@ class TestDocumentAPIIntegration:
                 name="documents",
                 enable_multivector=True
             )
-        except KnowledgeBaseAPIError:
+        except KnowledgeAPIError:
             pass  # Collection might already exist
 
         yield

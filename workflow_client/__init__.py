@@ -1,5 +1,5 @@
 """
-KnowledgeBase Client
+Knowledge Client
 
 Python client for workflow-knowledge service.
 Provides FeignClient-like interface for RAG operations.
@@ -61,6 +61,15 @@ from .models import (
     SupportedFormats,
 )
 from .exceptions import (
+    # New names
+    KnowledgeError,
+    KnowledgeConnectionError,
+    KnowledgeTimeoutError,
+    KnowledgeAPIError,
+    KnowledgeNotFoundError,
+    KnowledgeValidationError,
+    KnowledgeCircuitBreakerError,
+    # Backwards compatibility aliases (deprecated)
     KnowledgeBaseError,
     KnowledgeBaseConnectionError,
     KnowledgeBaseTimeoutError,
@@ -112,11 +121,11 @@ except ImportError:
 __version__ = "2.0.0"
 
 __all__ = [
-    # KnowledgeBase Client
+    # Knowledge Client
     "KnowledgeClient",
     "get_knowledge_client",
     "RequestInterceptor",
-    # KnowledgeBase Models
+    # Knowledge Models
     "MetadataFilter",
     "CollectionInfo",
     "SearchResult",
@@ -125,7 +134,15 @@ __all__ = [
     "DocumentProcessResult",
     "ExtractionResult",
     "SupportedFormats",
-    # KnowledgeBase Exceptions
+    # Knowledge Exceptions (new names)
+    "KnowledgeError",
+    "KnowledgeConnectionError",
+    "KnowledgeTimeoutError",
+    "KnowledgeAPIError",
+    "KnowledgeNotFoundError",
+    "KnowledgeValidationError",
+    "KnowledgeCircuitBreakerError",
+    # Knowledge Exceptions (deprecated aliases)
     "KnowledgeBaseError",
     "KnowledgeBaseConnectionError",
     "KnowledgeBaseTimeoutError",

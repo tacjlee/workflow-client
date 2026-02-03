@@ -19,9 +19,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from workflow_client import KnowledgeClient, MetadataFilter
 from workflow_client.exceptions import (
-    KnowledgeBaseConnectionError,
-    KnowledgeBaseAPIError,
-    KnowledgeBaseNotFoundError,
+    KnowledgeConnectionError,
+    KnowledgeAPIError,
+    KnowledgeNotFoundError,
 )
 
 
@@ -173,7 +173,7 @@ class TestVectorAPIIntegration:
                 name="vectors",
                 enable_multivector=True
             )
-        except KnowledgeBaseAPIError:
+        except KnowledgeAPIError:
             pass  # Collection might already exist
 
         yield
@@ -312,7 +312,7 @@ class TestVectorAPIIntegration:
         try:
             vector_ids = live_client.add_vectors(test_collection_name, [])
             assert vector_ids == []
-        except KnowledgeBaseAPIError:
+        except KnowledgeAPIError:
             # Empty list may be rejected by API validation
             pass
 
@@ -327,7 +327,7 @@ class TestVectorAPIIntegration:
             )
             # Should return 0 for non-existent vectors
             assert deleted_count >= 0
-        except KnowledgeBaseAPIError:
+        except KnowledgeAPIError:
             # May raise error if collection has no matching vectors
             pass
 
