@@ -118,7 +118,44 @@ except ImportError:
     CeleryTimeoutError = None
     CeleryTaskError = None
 
-__version__ = "1.2.3"
+__version__ = "1.3.0"
+
+# AST Model - Shared across PEV microservices
+from .models.ast import (
+    AstModel,
+    ASTv2,  # Backwards compatibility
+    create_empty_ast,
+    # Enums
+    ScreenType,
+    WidgetType,
+    MessageType,
+    DisplayStyle,
+    ScenarioCategory,
+    # All components
+    ScreenClassification,
+    OutputFileMapping,
+    WidgetRegistry,
+    Widget,
+    ModeBehavior,
+    WidgetViewpointMapping,
+    ViewpointMapping,
+    TestDataSample,
+    TestScenario,
+    NavigationStep,
+    PreCondition,
+    TestGroup,
+    DecisionTable,
+    DTCondition,
+    DTSubTable,
+    DTSubTableRow,
+    BusinessRules,
+    BusinessRule,
+    Message,
+    SqlVerification,
+    ExpectedTestCount,
+    CountBreakdown,
+    ValidationRule,
+)
 
 __all__ = [
     # Knowledge Client
@@ -163,4 +200,38 @@ __all__ = [
     "CeleryClientError",
     "CeleryTimeoutError",
     "CeleryTaskError",
+    # AST Model
+    "AstModel",
+    "ASTv2",
+    "create_empty_ast",
+    # AST Enums
+    "ScreenType",
+    "WidgetType",
+    "MessageType",
+    "DisplayStyle",
+    "ScenarioCategory",
+    # AST Components
+    "ScreenClassification",
+    "OutputFileMapping",
+    "WidgetRegistry",
+    "Widget",
+    "ModeBehavior",
+    "WidgetViewpointMapping",
+    "ViewpointMapping",
+    "TestDataSample",
+    "TestScenario",
+    "NavigationStep",
+    "PreCondition",
+    "TestGroup",
+    "DecisionTable",
+    "DTCondition",
+    "DTSubTable",
+    "DTSubTableRow",
+    "BusinessRules",
+    "BusinessRule",
+    "Message",
+    "SqlVerification",
+    "ExpectedTestCount",
+    "CountBreakdown",
+    "ValidationRule",
 ]
