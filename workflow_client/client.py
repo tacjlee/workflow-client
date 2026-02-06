@@ -77,6 +77,10 @@ from .models import (
     DocumentProcessResult,
     ExtractionResult,
     SupportedFormats,
+    ParentChildChunkConfig,
+    ParentChildProcessResult,
+    ParentResult,
+    SearchExpandResult,
 )
 from .exceptions import (
     KnowledgeConnectionError,
@@ -658,6 +662,167 @@ class KnowledgeClient:
             chunks=[SearchResult(**c) for c in context_data.get("chunks", [])],
             combined_context=context_data.get("combined_context", ""),
             source_documents=context_data.get("source_documents", [])
+        )
+
+    # =========================================================================
+    # PARENT-CHILD CHUNKING OPERATIONS
+    # =========================================================================
+
+    @retry_with_backoff(max_retries=3)
+    def add_documents_parent_child(
+        self,
+        collection_name: str,
+        content: str,
+        tenant_id: str,
+        knowledge_id: str,
+        document_id: Optional[str] = None,
+        file_name: Optional[str] = None,
+        user_id: Optional[str] = None,
+        document_type: str = "document",
+        parent_chunk_size: int = 4000,
+        child_chunk_size: int = 500,
+        child_chunk_overlap: int = 100
+    ) -> ParentChildProcessResult:
+        """
+        Add document with parent-child chunking strategy.
+
+        Creates large parent chunks (for content retrieval) and small child chunks
+        (for semantic search). Search returns full parent content for completeness.
+
+        Parent chunks use placeholder embeddings (not searchable) to avoid ColBERT truncation.
+        Only child chunks have real embeddings and are searchable.
+
+        Ideal for test cases, viewpoints, decision tables, and other content
+        where completeness matters.
+
+        Args:
+            collection_name: Target collection name
+            content: Full document content
+            tenant_id: Tenant ID (required)
+            knowledge_id: Knowledge base ID (required)
+            document_id: Document ID (auto-generated if not provided)
+            file_name: Original file name
+            user_id: Optional user ID
+            document_type: Document type (document, viewpoint, testcase, etc.)
+            parent_chunk_size: Size of parent chunks (default 4000 chars)
+            child_chunk_size: Size of child chunks (default 500 chars)
+            child_chunk_overlap: Overlap between children (default 100)
+
+        Returns:
+            ParentChildProcessResult with parent and child IDs
+
+        Example:
+            result = client.add_documents_parent_child(
+                collection_name="tenant_abc_test_kb",
+                content=test_case_content,
+                tenant_id="abc",
+                knowledge_id="kb-123",
+                document_type="testcase",
+                parent_chunk_size=2000,
+                child_chunk_size=200
+            )
+            print(f"Created {result.parent_count} parents, {result.child_count} children")
+        """
+        data = self._make_request(
+            "POST",
+            "/api/knowledge/documents/process/parent-child",
+            json={
+                "collection_name": collection_name,
+                "content": content,
+                "tenant_id": tenant_id,
+                "knowledge_id": knowledge_id,
+                "document_id": document_id,
+                "file_name": file_name,
+                "user_id": user_id,
+                "document_type": document_type,
+                "chunk_config": {
+                    "parent_chunk_size": parent_chunk_size,
+                    "child_chunk_size": child_chunk_size,
+                    "child_chunk_overlap": child_chunk_overlap
+                }
+            }
+        )
+        return ParentChildProcessResult(**data)
+
+    @retry_with_backoff(max_retries=3)
+    def search_for_parent(
+        self,
+        collection_name: str,
+        query: str,
+        top_k: int = 10,
+        expand_top_n: int = 5,
+        filters: Optional[MetadataFilter] = None,
+        score_threshold: Optional[float] = None,
+        include_children: bool = False
+    ) -> SearchExpandResult:
+        """
+        Search for parent documents by querying child chunks.
+
+        Ideal for retrieving complete test cases, viewpoints, or decision tables.
+
+        This method:
+        1. Searches child chunks (chunk_type="child")
+        2. Groups results by parent_id
+        3. Calculates parent score as max of child scores
+        4. Returns full parent content for top N parents
+
+        Args:
+            collection_name: Collection to search
+            query: Query text
+            top_k: Number of children to search
+            expand_top_n: Number of unique parents to return
+            filters: Metadata filters (applied to children)
+            score_threshold: Minimum similarity score
+            include_children: Include matching children in response
+
+        Returns:
+            SearchExpandResult with parent documents and their content
+
+        Example:
+            result = client.search_for_parent(
+                collection_name="tenant_abc_test_kb",
+                query="email validation",
+                expand_top_n=5,
+                filters=MetadataFilter(document_type="testcase")
+            )
+            for parent in result.parents:
+                print(f"Test Case (score: {parent.score}):")
+                print(parent.content[:200])
+        """
+        request_data = {
+            "collection_name": collection_name,
+            "query": query,
+            "top_k": top_k,
+            "expand_top_n": expand_top_n,
+            "include_children": include_children
+        }
+        if filters:
+            request_data["filters"] = filters.to_dict() if hasattr(filters, 'to_dict') else filters
+        if score_threshold is not None:
+            request_data["score_threshold"] = score_threshold
+
+        data = self._make_request("POST", "/api/knowledge/search/parent", json=request_data)
+
+        parents = []
+        for p in data.get("parents", []):
+            parent = ParentResult(
+                parent_id=p["parent_id"],
+                content=p["content"],
+                score=p["score"],
+                metadata=p.get("metadata", {}),
+                child_count=p.get("child_count", 0)
+            )
+            if include_children and p.get("matching_children"):
+                parent.matching_children = [SearchResult(**c) for c in p["matching_children"]]
+            parents.append(parent)
+
+        return SearchExpandResult(
+            parents=parents,
+            total_parents=data.get("total_parents", len(parents)),
+            total_children_searched=data.get("total_children_searched", 0),
+            query=data.get("query", query),
+            execution_time_ms=data.get("execution_time_ms", 0.0),
+            cached=data.get("cached", False)
         )
 
     # =========================================================================

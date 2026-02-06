@@ -14,6 +14,11 @@ from .knowledge import (
     DocumentProcessResult,
     ExtractionResult,
     SupportedFormats,
+    # Parent-Child Chunking Models
+    ParentChildChunkConfig,
+    ParentChildProcessResult,
+    ParentResult,
+    SearchExpandResult,
 )
 
 # AST Model
@@ -71,6 +76,11 @@ __all__ = [
     "DocumentProcessResult",
     "ExtractionResult",
     "SupportedFormats",
+    # Parent-Child Chunking Models
+    "ParentChildChunkConfig",
+    "ParentChildProcessResult",
+    "ParentResult",
+    "SearchExpandResult",
     # Main Model
     "AstModel",
     "ASTv2",
