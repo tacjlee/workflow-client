@@ -14,6 +14,15 @@ Components:
 7. SqlVerifications - Database assertion queries
 8. ExpectedTestCount - Validation metrics and thresholds
 
+v2.1 Enhancements:
+- TestCaseIdRule - Test case ID generation pattern ([011-XX])
+- ExpectedOutput - Composite model for MSG + SQL + display format
+- ExpansionStep, PostAction - Decision table row expansion
+- ViewpointMapping.viewpoint_category, recommend_items
+- ProcedureStep (enhanced NavigationStep) with sub_steps
+- PreCondition with role_requirement, system_state, data_setup
+- Message with display_color, display_position
+
 Usage:
     from workflow_client.models.ast import AstModel, ScreenClassification, WidgetRegistry
 
@@ -62,6 +71,7 @@ from .viewpoint_mapping import (
 from .test_scenarios import (
     TestScenario,
     NavigationStep,
+    ProcedureStep,  # v2.1: Enhanced NavigationStep
     PreCondition,
     TestGroup,
 )
@@ -72,6 +82,8 @@ from .decision_tables import (
     DTCondition,
     DTSubTable,
     DTSubTableRow,
+    ExpansionStep,  # v2.1
+    PostAction,  # v2.1
 )
 
 # Component 6: Business Rules
@@ -91,6 +103,18 @@ from .expected_count import (
     ExpectedTestCount,
     CountBreakdown,
     ValidationRule,
+)
+
+# v2.1: Test Case ID Rule
+from .test_case_id import (
+    TestCaseIdRule,
+)
+
+# v2.1: Expected Output Models
+from .expected_output import (
+    ExpectedOutput,
+    MessageRef,
+    DisplayFormat,
 )
 
 # Main AST Model
@@ -125,6 +149,7 @@ __all__ = [
     # Component 4
     "TestScenario",
     "NavigationStep",
+    "ProcedureStep",  # v2.1: Enhanced NavigationStep
     "PreCondition",
     "TestGroup",
 
@@ -133,6 +158,8 @@ __all__ = [
     "DTCondition",
     "DTSubTable",
     "DTSubTableRow",
+    "ExpansionStep",  # v2.1
+    "PostAction",  # v2.1
 
     # Component 6
     "BusinessRules",
@@ -146,6 +173,14 @@ __all__ = [
     "ExpectedTestCount",
     "CountBreakdown",
     "ValidationRule",
+
+    # v2.1: Test Case ID Rule
+    "TestCaseIdRule",
+
+    # v2.1: Expected Output Models
+    "ExpectedOutput",
+    "MessageRef",
+    "DisplayFormat",
 
     # Main AST
     "AstModel",

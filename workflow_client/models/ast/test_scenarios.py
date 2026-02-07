@@ -9,12 +9,38 @@ from pydantic import BaseModel, Field, ConfigDict
 from .enums import ScenarioCategory
 
 
-class NavigationStep(BaseModel):
-    """Navigation step to reach a scenario."""
+class ProcedureStep(BaseModel):
+    """
+    Procedure step for test execution.
+
+    Enhanced in v2.1 with sub_steps, expected_intermediate, target_widget, and data_column_ref.
+    """
     step_number: int
     action: str = Field(..., description="Action description")
     action_vi: Optional[str] = Field(None, description="Action in Vietnamese")
     target: Optional[str] = Field(None, description="Target element or URL")
+
+    # v2.1: Enhanced procedure step fields
+    sub_steps: List[str] = Field(
+        default_factory=list,
+        description="Nested sub-actions under this step (v2.1)"
+    )
+    expected_intermediate: Optional[str] = Field(
+        None,
+        description="Expected result after this step (v2.1)"
+    )
+    target_widget: Optional[str] = Field(
+        None,
+        description="Widget ID this step interacts with (v2.1)"
+    )
+    data_column_ref: Optional[str] = Field(
+        None,
+        description="Test Data column reference, e.g., 'D' for 'giá trị mô tả cột D' (v2.1)"
+    )
+
+
+# Backward compatibility alias
+NavigationStep = ProcedureStep
 
 
 class PreCondition(BaseModel):
@@ -23,6 +49,24 @@ class PreCondition(BaseModel):
     description: str
     description_vi: Optional[str] = None
     setup_required: Optional[str] = Field(None, description="Setup steps if any")
+
+    # v2.1: Structured pre-condition fields
+    role_requirement: Optional[str] = Field(
+        None,
+        description="Required login role (e.g., 'SystemAdmin', 'BackOffice', 'Operator') (v2.1)"
+    )
+    system_state: Optional[str] = Field(
+        None,
+        description="Required UI/system state (e.g., 'popup_open', 'dialog_open') (v2.1)"
+    )
+    data_setup: Optional[str] = Field(
+        None,
+        description="Data preconditions (e.g., 'data_not_exists', 'data_exists') (v2.1)"
+    )
+    applies_to_dt: Optional[str] = Field(
+        None,
+        description="Link to specific DT sub-table (e.g., 'DT1', 'DT2') (v2.1)"
+    )
 
 
 class TestGroup(BaseModel):
@@ -49,9 +93,9 @@ class TestScenario(BaseModel):
     category: ScenarioCategory = Field(..., description="Scenario category")
     priority: str = Field(default="medium")
 
-    navigation: List[NavigationStep] = Field(
+    navigation: List[ProcedureStep] = Field(
         default_factory=list,
-        description="Steps to reach this scenario"
+        description="Steps to reach this scenario (ProcedureStep in v2.1)"
     )
 
     pre_conditions: List[PreCondition] = Field(

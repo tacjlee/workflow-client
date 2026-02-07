@@ -10,12 +10,15 @@ from pydantic import BaseModel, Field, ConfigDict
 from .screen_classification import ScreenClassification, OutputFileMapping
 from .widget_registry import WidgetRegistry, Widget, ModeBehavior
 from .viewpoint_mapping import WidgetViewpointMapping, ViewpointMapping, TestDataSample
-from .test_scenarios import TestScenario, NavigationStep, PreCondition, TestGroup
-from .decision_tables import DecisionTable, DTCondition, DTSubTable, DTSubTableRow
+from .test_scenarios import TestScenario, NavigationStep, ProcedureStep, PreCondition, TestGroup
+from .decision_tables import DecisionTable, DTCondition, DTSubTable, DTSubTableRow, ExpansionStep, PostAction
 from .business_rules import BusinessRules, BusinessRule, Message
 from .sql_verifications import SqlVerification
 from .expected_count import ExpectedTestCount, CountBreakdown, ValidationRule
 from .enums import ScreenType, WidgetType, MessageType, DisplayStyle, ScenarioCategory
+# v2.1 models
+from .test_case_id import TestCaseIdRule
+from .expected_output import ExpectedOutput, MessageRef, DisplayFormat
 
 
 class AstModel(BaseModel):
@@ -38,7 +41,7 @@ class AstModel(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
     # Metadata
-    version: str = Field(default="2.0", description="AST schema version")
+    version: str = Field(default="2.1", description="AST schema version")
     plan_id: str = Field(..., description="Unique plan identifier")
     created_at: Optional[str] = Field(None, description="ISO timestamp")
 
@@ -114,8 +117,33 @@ class AstModel(BaseModel):
         return [dt for dt in self.decision_tables if scenario_id in dt.applies_to_scenarios]
 
     def get_total_dt_combinations(self) -> int:
-        """Get total number of decision table combinations."""
+        """Get total number of decision table combinations (v2.0 behavior: counts rows)."""
         return sum(dt.get_total_combinations() for dt in self.decision_tables)
+
+    def get_total_dt_expanded_count(self) -> int:
+        """Get total number of DT test cases after expansion (v2.1)."""
+        return sum(dt.get_total_expanded_test_count() for dt in self.decision_tables)
+
+    # ==================== v2.1 Test Case ID Methods ====================
+
+    def get_test_case_id_rule(self) -> Optional[TestCaseIdRule]:
+        """Get the test case ID rule from screen classification (v2.1)."""
+        return self.screen_classification.test_case_id_rule
+
+    def generate_test_case_id(self, counter: int) -> Optional[str]:
+        """
+        Generate a test case ID using the configured rule (v2.1).
+
+        Args:
+            counter: Counter value for the ID
+
+        Returns:
+            Generated ID string or None if no rule configured
+        """
+        rule = self.get_test_case_id_rule()
+        if rule:
+            return rule.generate_id(counter)
+        return None
 
     # ==================== Message Methods ====================
 
@@ -158,7 +186,7 @@ class AstModel(BaseModel):
 
     def get_summary(self) -> dict:
         """Get a summary of the AST contents."""
-        return {
+        summary = {
             "plan_id": self.plan_id,
             "version": self.version,
             "screen_id": self.screen_classification.screen_id,
@@ -177,6 +205,14 @@ class AstModel(BaseModel):
             "error_count": len(self.validation_errors),
             "warning_count": len(self.validation_warnings),
         }
+        # v2.1: Add expanded test count if different from combinations
+        dt_expanded = self.get_total_dt_expanded_count()
+        if dt_expanded != summary["dt_combinations"]:
+            summary["dt_expanded_test_count"] = dt_expanded
+        # v2.1: Include test case ID rule info
+        if self.screen_classification.test_case_id_rule:
+            summary["has_test_case_id_rule"] = True
+        return summary
 
 
 # Backwards compatibility alias

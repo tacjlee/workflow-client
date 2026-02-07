@@ -13,6 +13,11 @@ class TestDataSample(BaseModel):
     description: Optional[str] = Field(None, description="Description of what this tests")
     expected_result: Optional[str] = Field(None, description="Expected result for this data")
     is_valid: bool = Field(default=True, description="Whether this is valid input")
+    # v2.1: SQL references for this test data
+    sql_refs: List[str] = Field(
+        default_factory=list,
+        description="SQL verification IDs for this test data (v2.1)"
+    )
 
 
 class ViewpointMapping(BaseModel):
@@ -26,6 +31,16 @@ class ViewpointMapping(BaseModel):
 
     recommend: bool = Field(default=False, description="Whether this viewpoint is recommended")
     priority: str = Field(default="medium", description="Testing priority (critical/high/medium/low)")
+
+    # v2.1: Enhanced viewpoint categorization and recommend items
+    viewpoint_category: Optional[str] = Field(
+        None,
+        description="Category for Viewpoint column (e.g., 'Email', 'Must', 'Function', 'GUI') (v2.1)"
+    )
+    recommend_items: List[str] = Field(
+        default_factory=list,
+        description="Sub-items for Recommend column (e.g., ['- Không chứa @', '- Thiếu username']) (v2.1)"
+    )
 
     test_data_samples: List[TestDataSample] = Field(
         default_factory=list,
@@ -64,3 +79,15 @@ class WidgetViewpointMapping(BaseModel):
     def has_test_data(self) -> bool:
         """Check if any viewpoint has test data samples."""
         return any(vp.test_data_samples for vp in self.viewpoints)
+
+    def get_viewpoints_by_category(self, category: str) -> List[ViewpointMapping]:
+        """Get viewpoints filtered by category (v2.1)."""
+        return [vp for vp in self.viewpoints if vp.viewpoint_category == category]
+
+    def get_categories(self) -> List[str]:
+        """Get unique viewpoint categories (v2.1)."""
+        categories = set()
+        for vp in self.viewpoints:
+            if vp.viewpoint_category:
+                categories.add(vp.viewpoint_category)
+        return list(categories)

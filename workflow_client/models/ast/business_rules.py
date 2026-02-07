@@ -21,6 +21,16 @@ class Message(BaseModel):
     display_style: DisplayStyle = Field(default=DisplayStyle.INLINE)
     display_format: Optional[str] = Field(None, description="Format string with placeholders")
 
+    # v2.1: Enhanced display properties for accurate output rendering
+    display_color: Optional[str] = Field(
+        None,
+        description="Message text/border color (e.g., 'red', 'green') (v2.1)"
+    )
+    display_position: Optional[str] = Field(
+        None,
+        description="Display position (e.g., 'below_input', 'dialog', 'toast') (v2.1)"
+    )
+
     def get_text(self, language: str = "ja") -> str:
         """Get message text in specified language."""
         if language == "en" and self.message_text_en:

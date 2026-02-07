@@ -3,8 +3,11 @@ AST Model Component 5: Decision Tables.
 
 Defines role/mode combination matrices for test case expansion.
 """
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TYPE_CHECKING
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from .expected_output import ExpectedOutput
 
 
 class DTCondition(BaseModel):
@@ -14,6 +17,35 @@ class DTCondition(BaseModel):
     values: List[str] = Field(..., description="Possible values for this condition")
 
 
+class ExpansionStep(BaseModel):
+    """
+    Step in decision table row expansion (v2.1).
+
+    Defines procedure steps for each expanded test case.
+    """
+    step_number: int = Field(..., description="Step number (1-based)")
+    action: str = Field(..., description="Action description")
+    action_vi: Optional[str] = Field(None, description="Action in Vietnamese")
+    expected_output: Optional[Dict] = Field(
+        None,
+        description="Expected output for this step (ExpectedOutput dict)"
+    )
+
+
+class PostAction(BaseModel):
+    """
+    Post-action after decision table row execution (v2.1).
+
+    Common actions like close popup, verify result.
+    """
+    action: str = Field(..., description="Action description")
+    action_vi: Optional[str] = Field(None, description="Action in Vietnamese")
+    expected_output: Optional[Dict] = Field(
+        None,
+        description="Expected output for this action (ExpectedOutput dict)"
+    )
+
+
 class DTSubTableRow(BaseModel):
     """Row in a decision table sub-table."""
     row_id: str
@@ -21,6 +53,21 @@ class DTSubTableRow(BaseModel):
     expected_result: str
     expected_result_vi: Optional[str] = None
     message_ref: Optional[str] = Field(None, description="MSG-ID for expected message")
+
+    # v2.1: Expansion fields for generating multiple test cases per row
+    expansion_factor: int = Field(
+        default=1,
+        ge=1,
+        description="Number of test cases to generate from this row (v2.1, default=1 for v2.0 compatibility)"
+    )
+    expansion_steps: List[ExpansionStep] = Field(
+        default_factory=list,
+        description="Steps for each expanded test case (v2.1)"
+    )
+
+    def get_expanded_test_count(self) -> int:
+        """Get number of test cases this row expands to (v2.1)."""
+        return self.expansion_factor
 
 
 class DTSubTable(BaseModel):
@@ -77,6 +124,12 @@ class DecisionTable(BaseModel):
         description="Scenario IDs this decision table applies to"
     )
 
+    # v2.1: Post-actions common to all combinations
+    post_actions: List[PostAction] = Field(
+        default_factory=list,
+        description="Common actions after each DT row (e.g., close popup, verify) (v2.1)"
+    )
+
     def get_sub_table(self, sub_table_id: str) -> Optional[DTSubTable]:
         """Get sub-table by ID."""
         for st in self.sub_tables:
@@ -85,8 +138,20 @@ class DecisionTable(BaseModel):
         return None
 
     def get_total_combinations(self) -> int:
-        """Get total number of test combinations across all sub-tables."""
+        """Get total number of test combinations across all sub-tables (v2.0 behavior: counts rows)."""
         return sum(st.get_row_count() for st in self.sub_tables)
+
+    def get_total_expanded_test_count(self) -> int:
+        """
+        Get total number of test cases after expansion (v2.1).
+
+        Accounts for expansion_factor on each row.
+        """
+        total = 0
+        for st in self.sub_tables:
+            for row in st.rows:
+                total += row.get_expanded_test_count()
+        return total
 
     def get_condition(self, condition_id: str) -> Optional[DTCondition]:
         """Get condition by ID."""

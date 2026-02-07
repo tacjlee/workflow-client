@@ -8,6 +8,7 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel, Field, ConfigDict
 
 from .enums import ScreenType
+from .test_case_id import TestCaseIdRule
 
 
 class OutputFileMapping(BaseModel):
@@ -48,3 +49,9 @@ class ScreenClassification(BaseModel):
     )
 
     confidence: float = Field(default=0.8, ge=0.0, le=1.0)
+
+    # v2.1: Test case ID generation rule
+    test_case_id_rule: Optional[TestCaseIdRule] = Field(
+        None,
+        description="Rule for generating test case IDs (e.g., [011-01], [011-02]) (v2.1)"
+    )
