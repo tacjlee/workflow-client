@@ -17,10 +17,39 @@ Usage:
 """
 
 from functools import wraps
-from typing import Optional
+from typing import Optional, Union
+
+from kombu import Queue
 
 from .client import CeleryClient, get_shared_celery_app
 from .config import CeleryClientConfig
+
+
+# Default queue arguments for PEV architecture (1 day TTL with DLQ)
+DEFAULT_QUEUE_TTL = 86400000  # 24 hours in milliseconds
+
+
+def _get_queue_from_app(celery_app, queue_name: str) -> Union[Queue, str]:
+    """
+    Get Queue object from celery_app.conf.task_queues if available.
+
+    This ensures queue arguments (like x-message-ttl) are preserved
+    when sending tasks to queues that have custom configurations.
+
+    Args:
+        celery_app: Celery application instance
+        queue_name: Name of the queue to look up
+
+    Returns:
+        Queue object if found in task_queues, otherwise the queue name string
+    """
+    if celery_app and hasattr(celery_app.conf, 'task_queues'):
+        task_queues = celery_app.conf.task_queues
+        if task_queues:
+            for q in task_queues:
+                if hasattr(q, 'name') and q.name == queue_name:
+                    return q
+    return queue_name
 
 
 def celery_client(
@@ -144,8 +173,11 @@ def task_method(
         @wraps(method)
         def wrapper(self, *args, **kwargs):
             full_task = self._get_full_task_name(task)
-            target_queue = queue or self._default_queue
+            queue_name = queue or self._default_queue
             target_timeout = timeout or self._default_timeout
+
+            # Look up Queue object from celery_app to preserve queue_arguments (TTL, DLQ, etc.)
+            target_queue = _get_queue_from_app(self._celery, queue_name)
 
             if async_mode:
                 # Async call - return immediately
