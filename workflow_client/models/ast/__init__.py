@@ -1,7 +1,7 @@
 """
 AST Model - Abstract Syntax Tree for PEV Architecture.
 
-This package defines the 8-component Abstract Syntax Tree (AST) structure
+This package defines the 9-component Abstract Syntax Tree (AST) structure
 that the Planner generates and passes to Executor and Validator via Plan Contract.
 
 Components:
@@ -13,6 +13,7 @@ Components:
 6. BusinessRules - Rules and MSG-ID message registry
 7. SqlVerifications - Database assertion queries
 8. ExpectedTestCount - Validation metrics and thresholds
+9. TestGenerationRules - Formula and rules for test case generation (v2.2)
 
 v2.1 Enhancements:
 - TestCaseIdRule - Test case ID generation pattern ([011-XX])
@@ -22,6 +23,12 @@ v2.1 Enhancements:
 - ProcedureStep (enhanced NavigationStep) with sub_steps
 - PreCondition with role_requirement, system_state, data_setup
 - Message with display_color, display_position
+
+v2.2 Enhancements:
+- TestGenerationRules - How Executor should generate test cases
+- GenerationStrategy - Strategy enum (PER_WIDGET, PER_SCENARIO, etc.)
+- ScenarioGenerationRule - Per-category generation rules
+- FormulaComponent - Breakdown of expected count calculation
 
 Usage:
     from workflow_client.models.ast import AstModel, ScreenClassification, WidgetRegistry
@@ -41,6 +48,7 @@ Usage:
 # Enums
 from .enums import (
     ScreenType,
+    ScreenMode,
     WidgetType,
     MessageType,
     DisplayStyle,
@@ -117,6 +125,14 @@ from .expected_output import (
     DisplayFormat,
 )
 
+# v2.2: Component 9 - Test Generation Rules
+from .test_generation_rules import (
+    TestGenerationRules,
+    GenerationStrategy,
+    ScenarioGenerationRule,
+    FormulaComponent,
+)
+
 # Main AST Model
 from .ast import (
     AstModel,
@@ -181,6 +197,12 @@ __all__ = [
     "ExpectedOutput",
     "MessageRef",
     "DisplayFormat",
+
+    # v2.2: Component 9 - Test Generation Rules
+    "TestGenerationRules",
+    "GenerationStrategy",
+    "ScenarioGenerationRule",
+    "FormulaComponent",
 
     # Main AST
     "AstModel",

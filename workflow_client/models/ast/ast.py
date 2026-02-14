@@ -1,8 +1,10 @@
 """
 AST Model - Main Abstract Syntax Tree Model.
 
-Combines all 8 components into the complete AST structure
+Combines all 9 components into the complete AST structure
 that is passed between Planner, Executor, and Validator via Plan Contract.
+
+v2.2: Added TestGenerationRules component for Planner->Executor formula transfer
 """
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
@@ -19,6 +21,13 @@ from .enums import ScreenType, WidgetType, MessageType, DisplayStyle, ScenarioCa
 # v2.1 models
 from .test_case_id import TestCaseIdRule
 from .expected_output import ExpectedOutput, MessageRef, DisplayFormat
+# v2.2 models
+from .test_generation_rules import (
+    TestGenerationRules,
+    GenerationStrategy,
+    ScenarioGenerationRule,
+    FormulaComponent,
+)
 
 
 class AstModel(BaseModel):
@@ -37,11 +46,12 @@ class AstModel(BaseModel):
     6. business_rules - Rules and MSG-ID message registry
     7. sql_verifications - Database assertion queries
     8. expected_testcase_count - Validation metrics
+    9. test_generation_rules - Formula and rules for test case generation (v2.2)
     """
     model_config = ConfigDict(use_enum_values=True)
 
     # Metadata
-    version: str = Field(default="2.1", description="AST schema version")
+    version: str = Field(default="2.2", description="AST schema version")
     plan_id: str = Field(..., description="Unique plan identifier")
     created_at: Optional[str] = Field(None, description="ISO timestamp")
 
@@ -49,7 +59,7 @@ class AstModel(BaseModel):
     source_document: Optional[str] = Field(None, description="Source design document path")
     source_document_version: Optional[str] = Field(None, description="Document version")
 
-    # 8 Components
+    # 9 Components
     screen_classification: ScreenClassification
     widget_registry: WidgetRegistry
     widget_viewpoint_mapping: List[WidgetViewpointMapping] = Field(default_factory=list)
@@ -58,6 +68,12 @@ class AstModel(BaseModel):
     business_rules: BusinessRules = Field(default_factory=BusinessRules)
     sql_verifications: List[SqlVerification] = Field(default_factory=list)
     expected_testcase_count: ExpectedTestCount
+
+    # v2.2: Test generation rules (formula transfer from Planner to Executor)
+    test_generation_rules: Optional[TestGenerationRules] = Field(
+        default=None,
+        description="Rules for how Executor should generate test cases (v2.2)"
+    )
 
     # Validation metadata (populated by Plan Contract)
     validation_status: Optional[str] = Field(None, description="Plan Contract validation status")
@@ -182,6 +198,33 @@ class AstModel(BaseModel):
         """Check if AST has validation warnings."""
         return len(self.validation_warnings) > 0
 
+    # ==================== Generation Rules Methods (v2.2) ====================
+
+    def get_generation_strategy(self, category: str) -> GenerationStrategy:
+        """
+        Get the generation strategy for a scenario category.
+
+        Args:
+            category: Scenario category (e.g., "UI_VERIFICATION")
+
+        Returns:
+            GenerationStrategy to use for this category
+        """
+        if self.test_generation_rules:
+            return self.test_generation_rules.get_strategy_for_category(category)
+        # Default fallback
+        return GenerationStrategy.PER_WIDGET_VIEWPOINT_SAMPLE
+
+    def get_generation_rule(self, category: str) -> Optional[ScenarioGenerationRule]:
+        """Get the specific generation rule for a category."""
+        if self.test_generation_rules:
+            return self.test_generation_rules.get_rule_for_category(category)
+        return None
+
+    def has_generation_rules(self) -> bool:
+        """Check if generation rules are defined."""
+        return self.test_generation_rules is not None
+
     # ==================== Summary Methods ====================
 
     def get_summary(self) -> dict:
@@ -212,6 +255,11 @@ class AstModel(BaseModel):
         # v2.1: Include test case ID rule info
         if self.screen_classification.test_case_id_rule:
             summary["has_test_case_id_rule"] = True
+        # v2.2: Include generation rules summary
+        if self.test_generation_rules:
+            summary["has_generation_rules"] = True
+            summary["generation_formula"] = self.test_generation_rules.formula
+            summary["formula_total"] = self.test_generation_rules.total_from_formula
         return summary
 
 

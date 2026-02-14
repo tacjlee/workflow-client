@@ -66,6 +66,15 @@ class DisplayStyle(str, Enum):
     BANNER = "banner"
 
 
+class ScreenMode(str, Enum):
+    """Screen mode for widget behavior context."""
+    LIST = "list"       # List/search screen mode
+    CREATE = "create"   # Create/add new record mode
+    EDIT = "edit"       # Edit existing record mode
+    VIEW = "view"       # View/readonly mode
+    DELETE = "delete"   # Delete confirmation mode
+
+
 class ScenarioCategory(str, Enum):
     """Test scenario category."""
     UI_VERIFICATION = "UI_VERIFICATION"

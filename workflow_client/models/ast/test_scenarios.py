@@ -6,7 +6,7 @@ Defines test scenarios with navigation, pre-conditions, and test groups.
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
-from .enums import ScenarioCategory
+from .enums import ScenarioCategory, ScreenMode
 
 
 class ProcedureStep(BaseModel):
@@ -92,6 +92,12 @@ class TestScenario(BaseModel):
 
     category: ScenarioCategory = Field(..., description="Scenario category")
     priority: str = Field(default="medium")
+
+    # Screen mode context (v2.2) - indicates which mode this scenario tests
+    screen_mode: Optional[ScreenMode] = Field(
+        None,
+        description="Screen mode this scenario belongs to (list/create/edit/view/delete) (v2.2)"
+    )
 
     navigation: List[ProcedureStep] = Field(
         default_factory=list,

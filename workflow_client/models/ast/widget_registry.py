@@ -81,3 +81,29 @@ class WidgetRegistry(BaseModel):
     def get_widget_ids(self) -> List[str]:
         """Get all widget IDs."""
         return [w.widget_id for w in self.widgets]
+
+    def get_widgets_for_mode(self, mode: str) -> List[Widget]:
+        """
+        Get widgets that are active (visible/editable) in a specific mode.
+
+        Args:
+            mode: Screen mode ('create', 'edit', 'view', 'list')
+
+        Returns:
+            List of widgets that are not hidden in the specified mode
+        """
+        active_widgets = []
+        for widget in self.widgets:
+            if widget.mode_behavior:
+                behavior = getattr(widget.mode_behavior, mode, None)
+                # Include widget if behavior is not 'hidden'
+                if behavior != 'hidden':
+                    active_widgets.append(widget)
+            else:
+                # No mode behavior defined, assume visible in all modes
+                active_widgets.append(widget)
+        return active_widgets
+
+    def get_widget_ids_for_mode(self, mode: str) -> List[str]:
+        """Get widget IDs that are active in a specific mode."""
+        return [w.widget_id for w in self.get_widgets_for_mode(mode)]
