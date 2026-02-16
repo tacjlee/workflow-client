@@ -157,6 +157,45 @@ from .models.ast import (
     ValidationRule,
 )
 
+# MindMap Model - Replaces AST v2.2 with deterministic template-based planning
+from .models.mindmap import (
+    MindMapModel,
+    MindMap,  # Backwards compatibility alias
+    create_empty_mindmap,
+    create_mindmap_for_crud,
+    # Enums (imported with prefixes to avoid AST enum conflicts)
+    ScreenType as MindMapScreenType,
+    ScreenMode as MindMapScreenMode,
+    WidgetType as MindMapWidgetType,
+    ButtonType as MindMapButtonType,
+    ViewpointCategory,
+    WidgetState,
+    # Components
+    TestItem,
+    ViewpointPlan,
+    WidgetConstraints,
+    WidgetTestPlan,
+    ButtonTestPlan,
+    DTReference,
+    FixedTests,
+    ModeTestPlan,
+    # Template Constants
+    WIDGET_TEST_COUNTS,
+    WIDGET_APPLICABLE_MODES,
+    LIST_MODE_FIXED_TESTS,
+    ADD_MODE_FIXED_TESTS,
+    EDIT_MODE_FIXED_TESTS,
+    MODE_VALIDATION_TRIGGERS,
+    DT_COMBINATIONS,
+    DT_ROW_MULTIPLIER,
+    # Utility Functions
+    get_widget_test_count,
+    get_applicable_modes,
+    get_mode_fixed_tests,
+    get_dt_test_count,
+    calculate_trigger_tests,
+)
+
 __all__ = [
     # Knowledge Client
     "KnowledgeClient",
@@ -234,4 +273,40 @@ __all__ = [
     "ExpectedTestCount",
     "CountBreakdown",
     "ValidationRule",
+    # MindMap Main Model
+    "MindMapModel",
+    "MindMap",
+    "create_empty_mindmap",
+    "create_mindmap_for_crud",
+    # MindMap Enums (prefixed to avoid AST conflicts)
+    "MindMapScreenType",
+    "MindMapScreenMode",
+    "MindMapWidgetType",
+    "MindMapButtonType",
+    "ViewpointCategory",
+    "WidgetState",
+    # MindMap Components
+    "TestItem",
+    "ViewpointPlan",
+    "WidgetConstraints",
+    "WidgetTestPlan",
+    "ButtonTestPlan",
+    "DTReference",
+    "FixedTests",
+    "ModeTestPlan",
+    # MindMap Template Constants
+    "WIDGET_TEST_COUNTS",
+    "WIDGET_APPLICABLE_MODES",
+    "LIST_MODE_FIXED_TESTS",
+    "ADD_MODE_FIXED_TESTS",
+    "EDIT_MODE_FIXED_TESTS",
+    "MODE_VALIDATION_TRIGGERS",
+    "DT_COMBINATIONS",
+    "DT_ROW_MULTIPLIER",
+    # MindMap Utility Functions
+    "get_widget_test_count",
+    "get_applicable_modes",
+    "get_mode_fixed_tests",
+    "get_dt_test_count",
+    "calculate_trigger_tests",
 ]

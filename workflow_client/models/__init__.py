@@ -66,6 +66,46 @@ from .ast import (
     ValidationRule,
 )
 
+# MindMap Model (replaces AST v2.2)
+from .mindmap import (
+    # Main Model
+    MindMapModel,
+    MindMap,  # Backwards compatibility alias
+    create_empty_mindmap,
+    create_mindmap_for_crud,
+    # Enums (use mindmap-specific naming to avoid conflicts)
+    ScreenType as MindMapScreenType,
+    ScreenMode as MindMapScreenMode,
+    WidgetType as MindMapWidgetType,
+    ButtonType as MindMapButtonType,
+    ViewpointCategory,
+    WidgetState,
+    # Components
+    TestItem,
+    ViewpointPlan,
+    WidgetConstraints,
+    WidgetTestPlan,
+    ButtonTestPlan,
+    DTReference,
+    FixedTests,
+    ModeTestPlan,
+    # Template Constants
+    WIDGET_TEST_COUNTS,
+    WIDGET_APPLICABLE_MODES,
+    LIST_MODE_FIXED_TESTS,
+    ADD_MODE_FIXED_TESTS,
+    EDIT_MODE_FIXED_TESTS,
+    MODE_VALIDATION_TRIGGERS,
+    DT_COMBINATIONS,
+    DT_ROW_MULTIPLIER,
+    # Utility Functions
+    get_widget_test_count,
+    get_applicable_modes,
+    get_mode_fixed_tests,
+    get_dt_test_count,
+    calculate_trigger_tests,
+)
+
 __all__ = [
     # Knowledge Client Models
     "MetadataFilter",
@@ -81,45 +121,81 @@ __all__ = [
     "ParentChildProcessResult",
     "ParentResult",
     "SearchExpandResult",
-    # Main Model
+    # AST Main Model
     "AstModel",
     "ASTv2",
     "create_empty_ast",
-    # Enums
+    # AST Enums
     "ScreenType",
     "WidgetType",
     "MessageType",
     "DisplayStyle",
     "ScenarioCategory",
-    # Component 1
+    # AST Component 1
     "ScreenClassification",
     "OutputFileMapping",
-    # Component 2
+    # AST Component 2
     "WidgetRegistry",
     "Widget",
     "ModeBehavior",
-    # Component 3
+    # AST Component 3
     "WidgetViewpointMapping",
     "ViewpointMapping",
     "TestDataSample",
-    # Component 4
+    # AST Component 4
     "TestScenario",
     "NavigationStep",
     "PreCondition",
     "TestGroup",
-    # Component 5
+    # AST Component 5
     "DecisionTable",
     "DTCondition",
     "DTSubTable",
     "DTSubTableRow",
-    # Component 6
+    # AST Component 6
     "BusinessRules",
     "BusinessRule",
     "Message",
-    # Component 7
+    # AST Component 7
     "SqlVerification",
-    # Component 8
+    # AST Component 8
     "ExpectedTestCount",
     "CountBreakdown",
     "ValidationRule",
+    # MindMap Main Model
+    "MindMapModel",
+    "MindMap",
+    "create_empty_mindmap",
+    "create_mindmap_for_crud",
+    # MindMap Enums (prefixed to avoid conflicts)
+    "MindMapScreenType",
+    "MindMapScreenMode",
+    "MindMapWidgetType",
+    "MindMapButtonType",
+    "ViewpointCategory",
+    "WidgetState",
+    # MindMap Components
+    "TestItem",
+    "ViewpointPlan",
+    "WidgetConstraints",
+    "WidgetTestPlan",
+    "ButtonTestPlan",
+    "DTReference",
+    "FixedTests",
+    "ModeTestPlan",
+    # MindMap Template Constants
+    "WIDGET_TEST_COUNTS",
+    "WIDGET_APPLICABLE_MODES",
+    "LIST_MODE_FIXED_TESTS",
+    "ADD_MODE_FIXED_TESTS",
+    "EDIT_MODE_FIXED_TESTS",
+    "MODE_VALIDATION_TRIGGERS",
+    "DT_COMBINATIONS",
+    "DT_ROW_MULTIPLIER",
+    # MindMap Utility Functions
+    "get_widget_test_count",
+    "get_applicable_modes",
+    "get_mode_fixed_tests",
+    "get_dt_test_count",
+    "calculate_trigger_tests",
 ]
