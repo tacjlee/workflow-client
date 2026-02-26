@@ -21,63 +21,18 @@ from .knowledge import (
     SearchExpandResult,
 )
 
-# AST Model
-from .ast import (
-    # Main Model
-    AstModel,
-    ASTv2,  # Backwards compatibility
-    create_empty_ast,
-    # Enums
-    ScreenType,
-    WidgetType,
-    MessageType,
-    DisplayStyle,
-    ScenarioCategory,
-    # Component 1
-    ScreenClassification,
-    OutputFileMapping,
-    # Component 2
-    WidgetRegistry,
-    Widget,
-    ModeBehavior,
-    # Component 3
-    WidgetViewpointMapping,
-    ViewpointMapping,
-    TestDataSample,
-    # Component 4
-    TestScenario,
-    NavigationStep,
-    PreCondition,
-    TestGroup,
-    # Component 5
-    DecisionTable,
-    DTCondition,
-    DTSubTable,
-    DTSubTableRow,
-    # Component 6
-    BusinessRules,
-    BusinessRule,
-    Message,
-    # Component 7
-    SqlVerification,
-    # Component 8
-    ExpectedTestCount,
-    CountBreakdown,
-    ValidationRule,
-)
-
-# MindMap Model (replaces AST v2.2)
+# MindMap Model
 from .mindmap import (
     # Main Model
     MindMapModel,
     MindMap,  # Backwards compatibility alias
     create_empty_mindmap,
     create_mindmap_for_crud,
-    # Enums (use mindmap-specific naming to avoid conflicts)
-    ScreenType as MindMapScreenType,
-    ScreenMode as MindMapScreenMode,
-    WidgetType as MindMapWidgetType,
-    ButtonType as MindMapButtonType,
+    # Enums
+    ScreenType,
+    ScreenMode,
+    WidgetType,
+    ButtonType,
     ViewpointCategory,
     WidgetState,
     # Components
@@ -121,57 +76,16 @@ __all__ = [
     "ParentChildProcessResult",
     "ParentResult",
     "SearchExpandResult",
-    # AST Main Model
-    "AstModel",
-    "ASTv2",
-    "create_empty_ast",
-    # AST Enums
-    "ScreenType",
-    "WidgetType",
-    "MessageType",
-    "DisplayStyle",
-    "ScenarioCategory",
-    # AST Component 1
-    "ScreenClassification",
-    "OutputFileMapping",
-    # AST Component 2
-    "WidgetRegistry",
-    "Widget",
-    "ModeBehavior",
-    # AST Component 3
-    "WidgetViewpointMapping",
-    "ViewpointMapping",
-    "TestDataSample",
-    # AST Component 4
-    "TestScenario",
-    "NavigationStep",
-    "PreCondition",
-    "TestGroup",
-    # AST Component 5
-    "DecisionTable",
-    "DTCondition",
-    "DTSubTable",
-    "DTSubTableRow",
-    # AST Component 6
-    "BusinessRules",
-    "BusinessRule",
-    "Message",
-    # AST Component 7
-    "SqlVerification",
-    # AST Component 8
-    "ExpectedTestCount",
-    "CountBreakdown",
-    "ValidationRule",
     # MindMap Main Model
     "MindMapModel",
     "MindMap",
     "create_empty_mindmap",
     "create_mindmap_for_crud",
-    # MindMap Enums (prefixed to avoid conflicts)
-    "MindMapScreenType",
-    "MindMapScreenMode",
-    "MindMapWidgetType",
-    "MindMapButtonType",
+    # MindMap Enums
+    "ScreenType",
+    "ScreenMode",
+    "WidgetType",
+    "ButtonType",
     "ViewpointCategory",
     "WidgetState",
     # MindMap Components

@@ -120,54 +120,17 @@ except ImportError:
 
 __version__ = "1.3.0"
 
-# AST Model - Shared across PEV microservices
-from .models.ast import (
-    AstModel,
-    ASTv2,  # Backwards compatibility
-    create_empty_ast,
-    # Enums
-    ScreenType,
-    WidgetType,
-    MessageType,
-    DisplayStyle,
-    ScenarioCategory,
-    # All components
-    ScreenClassification,
-    OutputFileMapping,
-    WidgetRegistry,
-    Widget,
-    ModeBehavior,
-    WidgetViewpointMapping,
-    ViewpointMapping,
-    TestDataSample,
-    TestScenario,
-    NavigationStep,
-    PreCondition,
-    TestGroup,
-    DecisionTable,
-    DTCondition,
-    DTSubTable,
-    DTSubTableRow,
-    BusinessRules,
-    BusinessRule,
-    Message,
-    SqlVerification,
-    ExpectedTestCount,
-    CountBreakdown,
-    ValidationRule,
-)
-
-# MindMap Model - Replaces AST v2.2 with deterministic template-based planning
+# MindMap Model - Deterministic template-based planning
 from .models.mindmap import (
     MindMapModel,
     MindMap,  # Backwards compatibility alias
     create_empty_mindmap,
     create_mindmap_for_crud,
-    # Enums (imported with prefixes to avoid AST enum conflicts)
-    ScreenType as MindMapScreenType,
-    ScreenMode as MindMapScreenMode,
-    WidgetType as MindMapWidgetType,
-    ButtonType as MindMapButtonType,
+    # Enums
+    ScreenType,
+    ScreenMode,
+    WidgetType,
+    ButtonType,
     ViewpointCategory,
     WidgetState,
     # Components
@@ -239,50 +202,16 @@ __all__ = [
     "CeleryClientError",
     "CeleryTimeoutError",
     "CeleryTaskError",
-    # AST Model
-    "AstModel",
-    "ASTv2",
-    "create_empty_ast",
-    # AST Enums
-    "ScreenType",
-    "WidgetType",
-    "MessageType",
-    "DisplayStyle",
-    "ScenarioCategory",
-    # AST Components
-    "ScreenClassification",
-    "OutputFileMapping",
-    "WidgetRegistry",
-    "Widget",
-    "ModeBehavior",
-    "WidgetViewpointMapping",
-    "ViewpointMapping",
-    "TestDataSample",
-    "TestScenario",
-    "NavigationStep",
-    "PreCondition",
-    "TestGroup",
-    "DecisionTable",
-    "DTCondition",
-    "DTSubTable",
-    "DTSubTableRow",
-    "BusinessRules",
-    "BusinessRule",
-    "Message",
-    "SqlVerification",
-    "ExpectedTestCount",
-    "CountBreakdown",
-    "ValidationRule",
     # MindMap Main Model
     "MindMapModel",
     "MindMap",
     "create_empty_mindmap",
     "create_mindmap_for_crud",
-    # MindMap Enums (prefixed to avoid AST conflicts)
-    "MindMapScreenType",
-    "MindMapScreenMode",
-    "MindMapWidgetType",
-    "MindMapButtonType",
+    # MindMap Enums
+    "ScreenType",
+    "ScreenMode",
+    "WidgetType",
+    "ButtonType",
     "ViewpointCategory",
     "WidgetState",
     # MindMap Components
