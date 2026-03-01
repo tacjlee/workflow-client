@@ -81,6 +81,10 @@ from .models import (
     ParentChildProcessResult,
     ParentResult,
     SearchExpandResult,
+    SimilarityResponse,
+    BatchSimilarityItem,
+    BatchSimilarityResult,
+    BatchSimilarityResponse,
 )
 from .exceptions import (
     KnowledgeConnectionError,
@@ -518,6 +522,99 @@ class KnowledgeClient:
             }
         )
         return data.get("embeddings", [])
+
+    # =========================================================================
+    # SIMILARITY OPERATIONS
+    # =========================================================================
+
+    @retry_with_backoff(max_retries=3)
+    def compute_similarity(
+        self,
+        text1: str,
+        text2: str,
+        use_cache: bool = True
+    ) -> SimilarityResponse:
+        """
+        Compute semantic similarity between two texts.
+
+        Uses BGE-M3 embeddings and cosine similarity.
+        Useful for comparing test cases, documents, or any text pairs.
+
+        Args:
+            text1: First text (e.g., golden test case)
+            text2: Second text (e.g., generated test case)
+            use_cache: Use cache for embeddings (default: True)
+
+        Returns:
+            SimilarityResponse with similarity score (0.0-1.0)
+
+        Example:
+            result = client.compute_similarity(
+                text1="Login button should be visible",
+                text2="The login button must be displayed"
+            )
+            print(f"Similarity: {result.similarity}")  # e.g., 0.92
+        """
+        data = self._make_request(
+            "POST",
+            "/api/knowledge/similarity",
+            json={
+                "text1": text1,
+                "text2": text2,
+                "use_cache": use_cache
+            }
+        )
+        return SimilarityResponse(**data)
+
+    @retry_with_backoff(max_retries=3)
+    def compute_batch_similarity(
+        self,
+        pairs: List[Dict[str, str]],
+        use_cache: bool = True
+    ) -> BatchSimilarityResponse:
+        """
+        Compute semantic similarity for multiple text pairs.
+
+        Optimized for batch processing - embeddings are generated in one batch
+        and reused for pairs that share the same text.
+
+        Args:
+            pairs: List of dicts with 'text1' and 'text2' keys
+            use_cache: Use cache for embeddings (default: True)
+
+        Returns:
+            BatchSimilarityResponse with similarity scores for each pair
+
+        Example:
+            result = client.compute_batch_similarity([
+                {"text1": "Login button visible", "text2": "Login button displayed"},
+                {"text1": "Submit form", "text2": "Click submit button"}
+            ])
+            for r in result.results:
+                print(f"Pair {r.index}: {r.similarity}")
+        """
+        # Convert dicts to API format
+        api_pairs = [
+            {"text1": p["text1"], "text2": p["text2"]}
+            for p in pairs
+        ]
+
+        data = self._make_request(
+            "POST",
+            "/api/knowledge/similarity/batch",
+            json={
+                "pairs": api_pairs,
+                "use_cache": use_cache
+            }
+        )
+
+        results = [BatchSimilarityResult(**r) for r in data.get("results", [])]
+        return BatchSimilarityResponse(
+            results=results,
+            model=data.get("model", "bge-m3-onnx"),
+            count=data.get("count", len(results)),
+            execution_time_ms=data.get("execution_time_ms", 0.0)
+        )
 
     # =========================================================================
     # SEARCH OPERATIONS

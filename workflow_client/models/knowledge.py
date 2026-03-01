@@ -147,3 +147,48 @@ class SearchExpandResult(BaseModel):
     query: str
     execution_time_ms: float
     cached: bool = False
+
+
+# Similarity API Models
+
+class SimilarityRequest(BaseModel):
+    """Request to compute semantic similarity between two texts."""
+    text1: str = Field(..., min_length=1, description="First text")
+    text2: str = Field(..., min_length=1, description="Second text")
+    use_cache: bool = Field(default=True, description="Use cache for embeddings")
+
+
+class SimilarityResponse(BaseModel):
+    """Semantic similarity response."""
+    similarity: float = Field(..., ge=0.0, le=1.0, description="Cosine similarity score (0.0-1.0)")
+    model: str = Field(..., description="Embedding model used")
+    execution_time_ms: float = Field(..., description="Execution time in milliseconds")
+
+
+class BatchSimilarityItem(BaseModel):
+    """Single item in batch similarity request."""
+    text1: str = Field(..., min_length=1, description="First text")
+    text2: str = Field(..., min_length=1, description="Second text")
+
+
+class BatchSimilarityRequest(BaseModel):
+    """Request to compute similarity for multiple text pairs."""
+    pairs: List[BatchSimilarityItem] = Field(
+        ..., min_length=1, max_length=100,
+        description="List of text pairs to compare"
+    )
+    use_cache: bool = Field(default=True, description="Use cache for embeddings")
+
+
+class BatchSimilarityResult(BaseModel):
+    """Single result in batch similarity response."""
+    index: int = Field(..., description="Index of the pair in the request")
+    similarity: float = Field(..., ge=0.0, le=1.0, description="Cosine similarity score")
+
+
+class BatchSimilarityResponse(BaseModel):
+    """Batch similarity response."""
+    results: List[BatchSimilarityResult] = Field(..., description="Similarity results")
+    model: str = Field(..., description="Embedding model used")
+    count: int = Field(..., description="Number of pairs compared")
+    execution_time_ms: float = Field(..., description="Total execution time in milliseconds")

@@ -19,6 +19,13 @@ from .knowledge import (
     ParentChildProcessResult,
     ParentResult,
     SearchExpandResult,
+    # Similarity API Models
+    SimilarityRequest,
+    SimilarityResponse,
+    BatchSimilarityItem,
+    BatchSimilarityRequest,
+    BatchSimilarityResult,
+    BatchSimilarityResponse,
 )
 
 # MindMap Model
@@ -76,6 +83,13 @@ __all__ = [
     "ParentChildProcessResult",
     "ParentResult",
     "SearchExpandResult",
+    # Similarity API Models
+    "SimilarityRequest",
+    "SimilarityResponse",
+    "BatchSimilarityItem",
+    "BatchSimilarityRequest",
+    "BatchSimilarityResult",
+    "BatchSimilarityResponse",
     # MindMap Main Model
     "MindMapModel",
     "MindMap",

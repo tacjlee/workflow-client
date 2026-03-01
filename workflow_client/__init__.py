@@ -59,6 +59,12 @@ from .models import (
     DocumentProcessResult,
     ExtractionResult,
     SupportedFormats,
+    # Similarity API Models
+    SimilarityResponse,
+    BatchSimilarityItem,
+    BatchSimilarityRequest,
+    BatchSimilarityResult,
+    BatchSimilarityResponse,
 )
 from .exceptions import (
     # New names
@@ -118,7 +124,7 @@ except ImportError:
     CeleryTimeoutError = None
     CeleryTaskError = None
 
-__version__ = "1.3.0"
+__version__ = "1.3.3"
 
 # MindMap Model - Deterministic template-based planning
 from .models.mindmap import (
@@ -173,6 +179,12 @@ __all__ = [
     "DocumentProcessResult",
     "ExtractionResult",
     "SupportedFormats",
+    # Similarity API Models
+    "SimilarityResponse",
+    "BatchSimilarityItem",
+    "BatchSimilarityRequest",
+    "BatchSimilarityResult",
+    "BatchSimilarityResponse",
     # Knowledge Exceptions (new names)
     "KnowledgeError",
     "KnowledgeConnectionError",
