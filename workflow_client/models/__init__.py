@@ -26,6 +26,9 @@ from .knowledge import (
     BatchSimilarityRequest,
     BatchSimilarityResult,
     BatchSimilarityResponse,
+    # Search Records API Models
+    RecordMatch,
+    SearchRecordsResponse,
 )
 
 # MindMap Model
@@ -90,6 +93,9 @@ __all__ = [
     "BatchSimilarityRequest",
     "BatchSimilarityResult",
     "BatchSimilarityResponse",
+    # Search Records API Models
+    "RecordMatch",
+    "SearchRecordsResponse",
     # MindMap Main Model
     "MindMapModel",
     "MindMap",

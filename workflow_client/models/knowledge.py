@@ -192,3 +192,22 @@ class BatchSimilarityResponse(BaseModel):
     model: str = Field(..., description="Embedding model used")
     count: int = Field(..., description="Number of pairs compared")
     execution_time_ms: float = Field(..., description="Total execution time in milliseconds")
+
+
+# =============================================================================
+# Search Records API Models (Stateless Semantic Search)
+# =============================================================================
+
+class RecordMatch(BaseModel):
+    """A matching record from search_records."""
+    id: str = Field(..., description="Record identifier")
+    score: float = Field(..., ge=0.0, le=1.0, description="Similarity score")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Record metadata")
+
+
+class SearchRecordsResponse(BaseModel):
+    """Response from search_records."""
+    matches: List[RecordMatch] = Field(..., description="Matching records sorted by score")
+    total_records: int = Field(..., description="Total input records")
+    texts_embedded: int = Field(..., description="Number of texts embedded on-the-fly")
+    execution_time_ms: float = Field(..., description="Execution time in milliseconds")

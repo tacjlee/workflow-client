@@ -85,6 +85,8 @@ from .models import (
     BatchSimilarityItem,
     BatchSimilarityResult,
     BatchSimilarityResponse,
+    RecordMatch,
+    SearchRecordsResponse,
 )
 from .exceptions import (
     KnowledgeConnectionError,
@@ -614,6 +616,114 @@ class KnowledgeClient:
             model=data.get("model", "bge-m3-onnx"),
             count=data.get("count", len(results)),
             execution_time_ms=data.get("execution_time_ms", 0.0)
+        )
+
+    @retry_with_backoff(max_retries=3)
+    def generate_multivector_embeddings(
+        self,
+        texts: List[str],
+        include_sparse: bool = True,
+        include_colbert: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate multi-vector embeddings for texts.
+
+        Returns plain dicts that can be directly stored in PostgreSQL JSONB columns.
+        Each embedding contains dense vector (1024-dim) and optionally sparse vector.
+
+        Args:
+            texts: List of texts to embed
+            include_sparse: Include sparse vectors (default: True)
+            include_colbert: Include ColBERT vectors (default: False, large size)
+
+        Returns:
+            List of embedding dicts: [{"dense": [...], "sparse": {...}}, ...]
+
+        Example:
+            # Generate embeddings for storage
+            embeddings = client.generate_multivector_embeddings(["検索ボタン", "Submit"])
+
+            # Store in PostgreSQL JSONB column
+            for text, emb in zip(texts, embeddings):
+                intent.embedding = emb  # Direct assignment to JSONB column
+                db.session.commit()
+        """
+        data = self._make_request(
+            "POST",
+            "/api/knowledge/similarity/generate-embeddings",
+            json={
+                "texts": texts,
+                "include_sparse": include_sparse,
+                "include_colbert": include_colbert,
+            }
+        )
+
+        # Return plain dicts for PostgreSQL storage
+        return [emb for emb in data.get("embeddings", [])]
+
+    @retry_with_backoff(max_retries=3)
+    def search_records(
+        self,
+        query: str,
+        records: List[Dict[str, Any]],
+        top_k: int = 10,
+        min_similarity: float = 0.0,
+        weights: Optional[Dict[str, float]] = None,
+    ) -> SearchRecordsResponse:
+        """
+        Search records using multi-vector similarity.
+
+        Stateless semantic search - no data is stored. Records can provide
+        either text (embedded on-the-fly) or pre-computed embeddings.
+
+        Args:
+            query: Query text (always text, never embedding)
+            records: List of records, each with:
+                - id: Record identifier
+                - text: Text to embed (optional if embedding provided)
+                - embedding: Pre-computed embedding dict (optional if text provided)
+                - metadata: Optional metadata to return with matches
+            top_k: Number of top matches to return (default: 10)
+            min_similarity: Minimum similarity threshold (default: 0.0)
+            weights: Similarity weights {"dense": 0.5, "sparse": 0.5}
+
+        Returns:
+            SearchRecordsResponse with matching records sorted by score
+
+        Example with pre-computed embeddings (fast):
+            records = [
+                {"id": "1", "embedding": intent1.embedding, "metadata": {"name": "Search"}},
+                {"id": "2", "embedding": intent2.embedding, "metadata": {"name": "Submit"}},
+            ]
+            result = client.search_records("検索ボタン", records, top_k=5)
+            for match in result.matches:
+                print(f"{match.id}: {match.score}")
+
+        Example with text (slower, embeds on-the-fly):
+            records = [
+                {"id": "1", "text": "Search button click"},
+                {"id": "2", "text": "Submit form action"},
+            ]
+            result = client.search_records("検索", records)
+        """
+        data = self._make_request(
+            "POST",
+            "/api/knowledge/similarity/search-records",
+            json={
+                "query": query,
+                "records": records,
+                "top_k": top_k,
+                "min_similarity": min_similarity,
+                "weights": weights,
+            }
+        )
+
+        matches = [RecordMatch(**m) for m in data.get("matches", [])]
+        return SearchRecordsResponse(
+            matches=matches,
+            total_records=data.get("total_records", 0),
+            texts_embedded=data.get("texts_embedded", 0),
+            execution_time_ms=data.get("execution_time_ms", 0.0),
         )
 
     # =========================================================================
