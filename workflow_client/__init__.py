@@ -124,7 +124,39 @@ except ImportError:
     CeleryTimeoutError = None
     CeleryTaskError = None
 
-__version__ = "1.3.3"
+__version__ = "1.4.0"
+
+# Graph Knowledge Client SDK
+# Import with: from workflow_client import GraphKnowledgeClient
+from .graph_knowledge_client import (
+    GraphKnowledgeClient,
+    get_graph_knowledge_client,
+    GraphKnowledgeError,
+    GraphKnowledgeConnectionError,
+    GraphKnowledgeTimeoutError,
+    GraphKnowledgeAPIError,
+    GraphKnowledgeNotFoundError,
+)
+from .models.graph_knowledge import (
+    ViewpointNode,
+    ViewpointCreate,
+    ViewpointUpdate,
+    CoOccurrence,
+    SimilarViewpoint,
+    TestCaseCreate,
+    TestCaseNode,
+    TestCaseSimilarity,
+    ScreenCreate,
+    ScreenNode,
+    WidgetCreate,
+    WidgetNode,
+    CoOccurrenceDiscovery,
+    ViewpointSuggestion,
+    GoldenWidget,
+    GoldenTestCase,
+    GoldenLearningResult,
+    GraphStats,
+)
 
 # MindMap Model - Deterministic template-based planning
 from .models.mindmap import (
@@ -250,4 +282,32 @@ __all__ = [
     "get_mode_fixed_tests",
     "get_dt_test_count",
     "calculate_trigger_tests",
+    # Graph Knowledge Client
+    "GraphKnowledgeClient",
+    "get_graph_knowledge_client",
+    # Graph Knowledge Models
+    "ViewpointNode",
+    "ViewpointCreate",
+    "ViewpointUpdate",
+    "CoOccurrence",
+    "SimilarViewpoint",
+    "TestCaseCreate",
+    "TestCaseNode",
+    "TestCaseSimilarity",
+    "ScreenCreate",
+    "ScreenNode",
+    "WidgetCreate",
+    "WidgetNode",
+    "CoOccurrenceDiscovery",
+    "ViewpointSuggestion",
+    "GoldenWidget",
+    "GoldenTestCase",
+    "GoldenLearningResult",
+    "GraphStats",
+    # Graph Knowledge Exceptions
+    "GraphKnowledgeError",
+    "GraphKnowledgeConnectionError",
+    "GraphKnowledgeTimeoutError",
+    "GraphKnowledgeAPIError",
+    "GraphKnowledgeNotFoundError",
 ]
