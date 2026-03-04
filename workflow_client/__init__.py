@@ -137,6 +137,7 @@ from .graph_knowledge_client import (
     GraphKnowledgeAPIError,
     GraphKnowledgeNotFoundError,
 )
+
 from .models.graph_knowledge import (
     ViewpointNode,
     ViewpointCreate,
@@ -156,6 +157,11 @@ from .models.graph_knowledge import (
     GoldenTestCase,
     GoldenLearningResult,
     GraphStats,
+)
+from .parsers.golden_parser import (
+    parse_golden_file,
+    parse_golden_directory,
+    GoldenFileData,
 )
 
 # MindMap Model - Deterministic template-based planning
@@ -310,4 +316,8 @@ __all__ = [
     "GraphKnowledgeTimeoutError",
     "GraphKnowledgeAPIError",
     "GraphKnowledgeNotFoundError",
+    # Golden File Parser
+    "parse_golden_file",
+    "parse_golden_directory",
+    "GoldenFileData",
 ]

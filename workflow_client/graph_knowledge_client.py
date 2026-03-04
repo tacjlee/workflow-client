@@ -2,29 +2,24 @@
 GraphKnowledgeClient
 
 Synchronous HTTP client for workflow-graph-knowledge service.
-Provides access to FalkorDB-backed graph knowledge operations.
+Provides generic graph operations for any FalkorDB-backed graph.
 
 Usage:
     from workflow_client import GraphKnowledgeClient
 
     client = GraphKnowledgeClient()
 
-    # Create viewpoint
-    viewpoint = client.create_viewpoint("Must", strategy="TEMPLATE", vp_ids=["VP-001"])
+    # Create nodes
+    client.create_node("Viewpoint", "VP-001", {"name": "Must", "description": "Required field"})
 
-    # Get co-occurrences
-    co_occurrences = client.get_co_occurrences("Must")
+    # Create relationships
+    client.create_relationship("TestCase", "TC-001", "Viewpoint", "VP-001", "TESTS")
 
-    # Learn from golden data
-    result = client.learn_from_golden(
-        screen_id="SC011",
-        screen_name="Account Management",
-        widgets=[...],
-        testcases=[...]
-    )
+    # Query
+    result = client.query("MATCH (n:Viewpoint) RETURN n LIMIT 10")
 
-    # Infer missing viewpoints
-    suggestions = client.infer_viewpoints("SC011")
+    # Get stats
+    stats = client.get_stats()
 """
 
 import os
@@ -34,27 +29,6 @@ from typing import Optional, List, Dict, Any, Callable
 from functools import wraps
 
 import httpx
-
-from .models.graph_knowledge import (
-    ViewpointNode,
-    ViewpointCreate,
-    ViewpointUpdate,
-    CoOccurrence,
-    SimilarViewpoint,
-    TestCaseCreate,
-    TestCaseNode,
-    TestCaseSimilarity,
-    ScreenCreate,
-    ScreenNode,
-    WidgetCreate,
-    WidgetNode,
-    CoOccurrenceDiscovery,
-    ViewpointSuggestion,
-    GoldenWidget,
-    GoldenTestCase,
-    GoldenLearningResult,
-    GraphStats,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -113,11 +87,11 @@ class GraphKnowledgeClient:
     Synchronous HTTP client for workflow-graph-knowledge service.
 
     Features:
+    - Generic node/relationship CRUD operations
+    - Cypher query execution
     - Connection pooling
     - Retry with exponential backoff
-    - Type-safe request/response models
-    - Viewpoint, TestCase, Screen, Widget CRUD
-    - Learning and recommendation APIs
+    - Request interceptors
     """
 
     def __init__(
@@ -183,7 +157,7 @@ class GraphKnowledgeClient:
             headers = interceptor(headers)
         return headers
 
-    def _make_request(
+    def _request(
         self,
         method: str,
         endpoint: str,
@@ -237,603 +211,223 @@ class GraphKnowledgeClient:
             return {"status": "unhealthy", "error": str(e)}
 
     # =========================================================================
-    # VIEWPOINT OPERATIONS
+    # NODE OPERATIONS
     # =========================================================================
 
     @retry_with_backoff(max_retries=3)
-    def create_viewpoint(
+    def create_node(
         self,
-        name: str,
-        strategy: str = "TEMPLATE",
-        vp_ids: List[str] = None,
-        description: Optional[str] = None,
-    ) -> ViewpointNode:
+        label: str,
+        node_id: str,
+        properties: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
         """
-        Create or update a viewpoint node.
+        Create or merge a node.
 
         Args:
-            name: Viewpoint name (e.g., "Must", "Function")
-            strategy: Strategy type ("TEMPLATE", "COMBINATORIAL", "TARGETED_LLM")
-            vp_ids: List of VP IDs (e.g., ["VP-001", "VP-002"])
-            description: Optional description
+            label: Node label (e.g., "Viewpoint", "TestCase")
+            node_id: Unique identifier
+            properties: Additional properties
 
         Returns:
-            ViewpointNode with created/updated viewpoint
+            Created node data
         """
-        data = self._make_request(
+        return self._request(
             "POST",
-            "/api/v1/viewpoints",
+            "/api/v1/graph/nodes",
             json={
-                "name": name,
-                "strategy": strategy,
-                "vp_ids": vp_ids or [],
-                "description": description,
-            }
+                "label": label,
+                "id": node_id,
+                "properties": properties or {},
+            },
         )
-        return ViewpointNode(**data)
 
     @retry_with_backoff(max_retries=3)
-    def get_viewpoint(self, name: str) -> Optional[ViewpointNode]:
+    def create_nodes_bulk(
+        self,
+        nodes: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
         """
-        Get viewpoint by name.
+        Bulk create nodes.
 
         Args:
-            name: Viewpoint name
+            nodes: List of {"label": str, "id": str, "properties": dict}
 
         Returns:
-            ViewpointNode or None if not found
+            {"created": int, "errors": list}
         """
+        return self._request(
+            "POST",
+            "/api/v1/graph/nodes/bulk",
+            json={"nodes": nodes},
+        )
+
+    @retry_with_backoff(max_retries=3)
+    def get_node(self, label: str, node_id: str) -> Optional[Dict[str, Any]]:
+        """Get a node by label and ID."""
         try:
-            data = self._make_request("GET", f"/api/v1/viewpoints/{name}")
-            return ViewpointNode(**data)
+            return self._request("GET", f"/api/v1/graph/nodes/{label}/{node_id}")
         except GraphKnowledgeNotFoundError:
             return None
 
     @retry_with_backoff(max_retries=3)
-    def list_viewpoints(self, limit: int = 100, offset: int = 0) -> List[ViewpointNode]:
-        """
-        List all viewpoints.
-
-        Args:
-            limit: Maximum number of results
-            offset: Offset for pagination
-
-        Returns:
-            List of ViewpointNode
-        """
-        data = self._make_request(
-            "GET",
-            "/api/v1/viewpoints",
-            params={"limit": limit, "offset": offset}
-        )
-        return [ViewpointNode(**v) for v in data]
-
-    @retry_with_backoff(max_retries=3)
-    def get_co_occurrences(
+    def list_nodes(
         self,
-        viewpoint: str,
-        min_frequency: int = 2,
-        min_confidence: float = 0.5,
-    ) -> List[CoOccurrence]:
-        """
-        Get viewpoints that co-occur with the given viewpoint.
-
-        Args:
-            viewpoint: Viewpoint name
-            min_frequency: Minimum co-occurrence frequency
-            min_confidence: Minimum confidence score
-
-        Returns:
-            List of CoOccurrence relationships
-        """
-        data = self._make_request(
+        label: str,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """List nodes by label."""
+        return self._request(
             "GET",
-            f"/api/v1/viewpoints/{viewpoint}/co-occurrences",
-            params={
-                "min_frequency": min_frequency,
-                "min_confidence": min_confidence,
-            }
+            f"/api/v1/graph/nodes/{label}",
+            params={"limit": limit, "offset": offset},
         )
-        return [CoOccurrence(**c) for c in data.get("viewpoints", [])]
 
     @retry_with_backoff(max_retries=3)
-    def get_similar_viewpoints(
-        self,
-        viewpoint: str,
-        min_score: float = 0.7,
-        limit: int = 10,
-    ) -> List[SimilarViewpoint]:
-        """
-        Get viewpoints similar to the given viewpoint.
-
-        Args:
-            viewpoint: Viewpoint name
-            min_score: Minimum similarity score
-            limit: Maximum number of results
-
-        Returns:
-            List of SimilarViewpoint
-        """
-        data = self._make_request(
-            "GET",
-            f"/api/v1/viewpoints/{viewpoint}/similar",
-            params={
-                "min_score": min_score,
-                "limit": limit,
-            }
-        )
-        return [SimilarViewpoint(**s) for s in data.get("viewpoints", [])]
-
-    @retry_with_backoff(max_retries=3)
-    def delete_viewpoint(self, name: str) -> bool:
-        """
-        Delete viewpoint and its relationships.
-
-        Args:
-            name: Viewpoint name
-
-        Returns:
-            True if deleted
-        """
+    def delete_node(self, label: str, node_id: str) -> bool:
+        """Delete a node and its relationships."""
         try:
-            self._make_request("DELETE", f"/api/v1/viewpoints/{name}")
+            self._request("DELETE", f"/api/v1/graph/nodes/{label}/{node_id}")
             return True
         except GraphKnowledgeNotFoundError:
             return False
 
+    @retry_with_backoff(max_retries=3)
+    def delete_all_nodes(self, label: str) -> int:
+        """Delete all nodes with a given label."""
+        result = self._request("DELETE", f"/api/v1/graph/nodes/{label}")
+        return result.get("deleted", 0)
+
     # =========================================================================
-    # TEST CASE OPERATIONS
+    # RELATIONSHIP OPERATIONS
     # =========================================================================
 
     @retry_with_backoff(max_retries=3)
-    def create_testcase(
+    def create_relationship(
         self,
-        content: str,
-        viewpoint: str,
-        screen_id: str,
-        procedure: str = "",
-        expected_result: str = "",
-        widget_id: Optional[str] = None,
-        mode: Optional[str] = None,
-        priority: str = "Medium",
-        source_type: str = "golden",
-    ) -> TestCaseNode:
+        from_label: str,
+        from_id: str,
+        to_label: str,
+        to_id: str,
+        rel_type: str,
+        properties: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
         """
-        Create a test case node with relationships.
+        Create a relationship between two nodes.
 
         Args:
-            content: Test case content/description
-            viewpoint: Viewpoint name this test case tests
-            screen_id: Screen ID this test case belongs to
-            procedure: Test procedure steps
-            expected_result: Expected result
-            widget_id: Optional widget ID this test case targets
-            mode: Optional mode (LIST, ADD, EDIT)
-            priority: Priority (High, Medium, Low)
-            source_type: Source type (golden, generated, manual)
+            from_label: Source node label
+            from_id: Source node ID
+            to_label: Target node label
+            to_id: Target node ID
+            rel_type: Relationship type (e.g., "TESTS", "BELONGS_TO")
+            properties: Additional properties
 
         Returns:
-            TestCaseNode with created test case
+            Created relationship data
         """
-        data = self._make_request(
+        return self._request(
             "POST",
-            "/api/v1/testcases",
+            "/api/v1/graph/relationships",
             json={
-                "content": content,
-                "viewpoint": viewpoint,
-                "screen_id": screen_id,
-                "procedure": procedure,
-                "expected_result": expected_result,
-                "widget_id": widget_id,
-                "mode": mode,
-                "priority": priority,
-                "source_type": source_type,
-            }
+                "from_label": from_label,
+                "from_id": from_id,
+                "to_label": to_label,
+                "to_id": to_id,
+                "type": rel_type,
+                "properties": properties or {},
+            },
         )
-        return TestCaseNode(**data)
 
     @retry_with_backoff(max_retries=3)
-    def create_testcases_bulk(self, testcases: List[TestCaseCreate]) -> int:
-        """
-        Bulk create test cases.
-
-        Args:
-            testcases: List of TestCaseCreate models
-
-        Returns:
-            Number of created test cases
-        """
-        data = self._make_request(
-            "POST",
-            "/api/v1/testcases/bulk",
-            json={"items": [tc.model_dump() for tc in testcases]}
-        )
-        return data.get("created", 0)
-
-    @retry_with_backoff(max_retries=3)
-    def get_testcase(self, testcase_id: str) -> Optional[TestCaseNode]:
-        """
-        Get test case by ID.
-
-        Args:
-            testcase_id: Test case ID
-
-        Returns:
-            TestCaseNode or None if not found
-        """
-        try:
-            data = self._make_request("GET", f"/api/v1/testcases/{testcase_id}")
-            return TestCaseNode(**data)
-        except GraphKnowledgeNotFoundError:
-            return None
-
-    @retry_with_backoff(max_retries=3)
-    def get_similar_testcases(
+    def create_relationships_bulk(
         self,
-        testcase_id: str,
-        min_score: float = 0.7,
-        cross_screen: bool = True,
-        limit: int = 20,
-    ) -> List[TestCaseSimilarity]:
+        relationships: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
         """
-        Find similar test cases.
+        Bulk create relationships.
 
         Args:
-            testcase_id: Test case ID
-            min_score: Minimum similarity score
-            cross_screen: Include test cases from other screens
-            limit: Maximum number of results
+            relationships: List of relationship dicts
 
         Returns:
-            List of TestCaseSimilarity
+            {"created": int, "errors": list}
         """
-        data = self._make_request(
-            "GET",
-            f"/api/v1/testcases/{testcase_id}/similar",
-            params={
-                "min_score": min_score,
-                "cross_screen": cross_screen,
-                "limit": limit,
-            }
+        return self._request(
+            "POST",
+            "/api/v1/graph/relationships/bulk",
+            json={"relationships": relationships},
         )
-        return [TestCaseSimilarity(**tc) for tc in data.get("testcases", [])]
-
-    @retry_with_backoff(max_retries=3)
-    def get_testcases_by_screen(self, screen_id: str, limit: int = 100) -> List[TestCaseNode]:
-        """
-        List test cases for a screen.
-
-        Args:
-            screen_id: Screen ID
-            limit: Maximum number of results
-
-        Returns:
-            List of TestCaseNode
-        """
-        data = self._make_request(
-            "GET",
-            f"/api/v1/testcases/by-screen/{screen_id}",
-            params={"limit": limit}
-        )
-        return [TestCaseNode(**tc) for tc in data]
-
-    @retry_with_backoff(max_retries=3)
-    def get_testcases_by_viewpoint(self, viewpoint: str, limit: int = 100) -> List[TestCaseNode]:
-        """
-        List test cases for a viewpoint.
-
-        Args:
-            viewpoint: Viewpoint name
-            limit: Maximum number of results
-
-        Returns:
-            List of TestCaseNode
-        """
-        data = self._make_request(
-            "GET",
-            f"/api/v1/testcases/by-viewpoint/{viewpoint}",
-            params={"limit": limit}
-        )
-        return [TestCaseNode(**tc) for tc in data]
 
     # =========================================================================
-    # SCREEN OPERATIONS
+    # QUERY OPERATIONS
     # =========================================================================
 
     @retry_with_backoff(max_retries=3)
-    def create_screen(
+    def query(
         self,
-        screen_id: str,
-        name: str,
-        document_type: str = "CRUD",
-        modes: List[str] = None,
-    ) -> ScreenNode:
+        cypher: str,
+        parameters: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
         """
-        Create or update a screen node.
+        Execute a Cypher query.
 
         Args:
-            screen_id: Screen ID (e.g., "SC011")
-            name: Screen name
-            document_type: Document type (CRUD, List, Form)
-            modes: List of modes (LIST, ADD, EDIT)
+            cypher: The Cypher query
+            parameters: Query parameters
 
         Returns:
-            ScreenNode with created/updated screen
+            {"columns": list, "rows": list, "stats": dict}
         """
-        data = self._make_request(
+        return self._request(
             "POST",
-            "/api/v1/screens",
+            "/api/v1/graph/query",
             json={
-                "id": screen_id,
-                "name": name,
-                "document_type": document_type,
-                "modes": modes or ["LIST", "ADD", "EDIT"],
-            }
+                "cypher": cypher,
+                "parameters": parameters or {},
+            },
         )
-        return ScreenNode(**data)
-
-    @retry_with_backoff(max_retries=3)
-    def get_screen(self, screen_id: str) -> Optional[ScreenNode]:
-        """
-        Get screen with statistics.
-
-        Args:
-            screen_id: Screen ID
-
-        Returns:
-            ScreenNode or None if not found
-        """
-        try:
-            data = self._make_request("GET", f"/api/v1/screens/{screen_id}")
-            return ScreenNode(**data)
-        except GraphKnowledgeNotFoundError:
-            return None
-
-    @retry_with_backoff(max_retries=3)
-    def list_screens(self, limit: int = 100, offset: int = 0) -> List[ScreenNode]:
-        """
-        List all screens.
-
-        Args:
-            limit: Maximum number of results
-            offset: Offset for pagination
-
-        Returns:
-            List of ScreenNode
-        """
-        data = self._make_request(
-            "GET",
-            "/api/v1/screens",
-            params={"limit": limit, "offset": offset}
-        )
-        return [ScreenNode(**s) for s in data]
-
-    @retry_with_backoff(max_retries=3)
-    def get_similar_screens(
-        self,
-        screen_id: str,
-        min_score: float = 0.7,
-        limit: int = 10,
-    ) -> List[ScreenNode]:
-        """
-        Find similar screens.
-
-        Args:
-            screen_id: Screen ID
-            min_score: Minimum similarity score
-            limit: Maximum number of results
-
-        Returns:
-            List of ScreenNode
-        """
-        data = self._make_request(
-            "GET",
-            f"/api/v1/screens/{screen_id}/similar",
-            params={
-                "min_score": min_score,
-                "limit": limit,
-            }
-        )
-        return [ScreenNode(**s) for s in data]
-
-    # =========================================================================
-    # WIDGET OPERATIONS
-    # =========================================================================
-
-    @retry_with_backoff(max_retries=3)
-    def create_widget(
-        self,
-        widget_id: str,
-        name: str,
-        widget_type: str,
-        screen_id: str,
-        semantic_type: Optional[str] = None,
-    ) -> WidgetNode:
-        """
-        Create or update a widget node.
-
-        Args:
-            widget_id: Widget ID
-            name: Widget name
-            widget_type: Widget type (BUTTON, TEXT_INPUT, etc.)
-            screen_id: Screen ID this widget belongs to
-            semantic_type: Optional semantic type
-
-        Returns:
-            WidgetNode with created/updated widget
-        """
-        data = self._make_request(
-            "POST",
-            "/api/v1/screens/widgets",
-            json={
-                "id": widget_id,
-                "name": name,
-                "type": widget_type,
-                "screen_id": screen_id,
-                "semantic_type": semantic_type,
-            }
-        )
-        return WidgetNode(**data)
-
-    @retry_with_backoff(max_retries=3)
-    def get_widgets_by_screen(self, screen_id: str) -> List[WidgetNode]:
-        """
-        List widgets for a screen.
-
-        Args:
-            screen_id: Screen ID
-
-        Returns:
-            List of WidgetNode
-        """
-        data = self._make_request("GET", f"/api/v1/screens/{screen_id}/widgets")
-        return [WidgetNode(**w) for w in data]
-
-    # =========================================================================
-    # LEARNING OPERATIONS
-    # =========================================================================
-
-    @retry_with_backoff(max_retries=3)
-    def discover_co_occurrences(self, screen_id: str) -> List[CoOccurrenceDiscovery]:
-        """
-        Discover viewpoint co-occurrences for a screen.
-
-        Analyzes test cases to find which viewpoints often appear together.
-
-        Args:
-            screen_id: Screen ID to analyze
-
-        Returns:
-            List of discovered co-occurrences
-        """
-        data = self._make_request(
-            "POST",
-            "/api/v1/learn/co-occurrences",
-            json={"screen_id": screen_id}
-        )
-        return [CoOccurrenceDiscovery(**c) for c in data.get("discovered", [])]
-
-    @retry_with_backoff(max_retries=3)
-    def compute_similarities(self, screen_id: str, threshold: float = 0.7) -> int:
-        """
-        Compute similarities between test cases.
-
-        Args:
-            screen_id: Screen ID
-            threshold: Similarity threshold
-
-        Returns:
-            Number of similarity links created
-        """
-        data = self._make_request(
-            "POST",
-            "/api/v1/learn/similarities",
-            json={"screen_id": screen_id, "threshold": threshold}
-        )
-        return data.get("links_created", 0)
-
-    @retry_with_backoff(max_retries=3)
-    def infer_viewpoints(
-        self,
-        screen_id: str,
-        widget_ids: List[str] = None,
-    ) -> List[ViewpointSuggestion]:
-        """
-        Suggest missing viewpoints based on graph patterns.
-
-        Uses co-occurrence patterns and similar screens to recommend
-        viewpoints that might be missing from the current screen.
-
-        Args:
-            screen_id: Screen ID
-            widget_ids: Optional list of widget IDs for context
-
-        Returns:
-            List of ViewpointSuggestion with confidence scores
-        """
-        data = self._make_request(
-            "POST",
-            "/api/v1/learn/infer-viewpoints",
-            json={
-                "screen_id": screen_id,
-                "widget_ids": widget_ids or [],
-            }
-        )
-        return [ViewpointSuggestion(**s) for s in data.get("suggestions", [])]
-
-    @retry_with_backoff(max_retries=3)
-    def learn_from_golden(
-        self,
-        screen_id: str,
-        screen_name: str,
-        document_type: str = "CRUD",
-        modes: List[str] = None,
-        widgets: List[GoldenWidget] = None,
-        testcases: List[GoldenTestCase] = None,
-    ) -> GoldenLearningResult:
-        """
-        Full learning pipeline from golden data.
-
-        Creates screen, widgets, test cases, viewpoints, and discovers
-        co-occurrence patterns in a single operation.
-
-        Args:
-            screen_id: Screen ID
-            screen_name: Screen name
-            document_type: Document type (CRUD, List, Form)
-            modes: List of modes
-            widgets: List of GoldenWidget
-            testcases: List of GoldenTestCase
-
-        Returns:
-            GoldenLearningResult with counts of created entities
-        """
-        data = self._make_request(
-            "POST",
-            "/api/v1/learn/from-golden",
-            json={
-                "screen_id": screen_id,
-                "screen_name": screen_name,
-                "document_type": document_type,
-                "modes": modes or ["LIST", "ADD", "EDIT"],
-                "widgets": [w.model_dump() for w in (widgets or [])],
-                "testcases": [tc.model_dump() for tc in (testcases or [])],
-            }
-        )
-        return GoldenLearningResult(**data)
-
-    @retry_with_backoff(max_retries=3)
-    def compute_screen_similarities(self, threshold: float = 0.5) -> int:
-        """
-        Compute screen similarities based on shared viewpoints.
-
-        Args:
-            threshold: Similarity threshold
-
-        Returns:
-            Number of similarity links created
-        """
-        data = self._make_request(
-            "POST",
-            f"/api/v1/learn/screen-similarity",
-            params={"threshold": threshold}
-        )
-        return data.get("links_created", 0)
 
     # =========================================================================
     # STATS OPERATIONS
     # =========================================================================
 
     @retry_with_backoff(max_retries=3)
-    def get_stats(self) -> GraphStats:
+    def get_stats(self) -> Dict[str, Any]:
         """
         Get graph statistics.
 
         Returns:
-            GraphStats with node and relationship counts
+            {"graph_name": str, "total_nodes": int, "total_relationships": int, ...}
         """
-        data = self._make_request("GET", "/api/v1/stats")
-        return GraphStats(**data)
+        return self._request("GET", "/api/v1/graph/stats")
+
+    # =========================================================================
+    # INDEX OPERATIONS
+    # =========================================================================
+
+    @retry_with_backoff(max_retries=3)
+    def create_index(self, label: str, property: str) -> Dict[str, Any]:
+        """Create an index on a node label and property."""
+        return self._request(
+            "POST",
+            "/api/v1/graph/indexes",
+            json={"label": label, "property": property},
+        )
+
+    # =========================================================================
+    # ADMIN OPERATIONS
+    # =========================================================================
+
+    @retry_with_backoff(max_retries=3)
+    def delete_all(self, confirm: bool = False) -> Dict[str, Any]:
+        """Delete all data from the graph. Requires confirm=True."""
+        return self._request(
+            "DELETE",
+            "/api/v1/graph/all",
+            params={"confirm": confirm},
+        )
 
 
 # Singleton instance
