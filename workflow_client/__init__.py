@@ -164,6 +164,16 @@ from .parsers.golden_parser import (
     GoldenFileData,
 )
 
+# Identifiers - Content-hash based identification utilities
+from .identifiers import (
+    ScreenIdentity,
+    generate_content_hash,
+    generate_content_id,
+    generate_screen_identity,
+    extract_mode,
+    read_file_content,
+)
+
 # MindMap Model - Deterministic template-based planning
 from .models.mindmap import (
     MindMapModel,
@@ -320,4 +330,11 @@ __all__ = [
     "parse_golden_file",
     "parse_golden_directory",
     "GoldenFileData",
+    # Identifiers
+    "ScreenIdentity",
+    "generate_content_hash",
+    "generate_content_id",
+    "generate_screen_identity",
+    "extract_mode",
+    "read_file_content",
 ]
