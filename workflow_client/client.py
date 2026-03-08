@@ -300,6 +300,38 @@ class KnowledgeClient:
         return CollectionInfo(**data)
 
     @retry_with_backoff(max_retries=3)
+    def create_collection_direct(
+        self,
+        collection_name: str,
+        enable_multivector: bool = True,
+        vector_size: int = 1024
+    ) -> CollectionInfo:
+        """
+        Create a new vector collection with exact name.
+
+        Use this for global collections (e.g., 'golden_data') that don't need tenant prefix.
+
+        Args:
+            collection_name: Exact collection name (no prefix added)
+            enable_multivector: Enable BGE-M3 multi-vector search
+            vector_size: Vector dimension size (1024 for BGE-M3)
+
+        Returns:
+            CollectionInfo with created collection details
+        """
+        data = self._make_request(
+            "POST",
+            "/api/knowledge/collections",
+            json={
+                "collection_name": collection_name,
+                "enable_multivector": enable_multivector,
+                "vector_size": vector_size,
+                "distance": "Cosine"
+            }
+        )
+        return CollectionInfo(**data)
+
+    @retry_with_backoff(max_retries=3)
     def get_collection_info(self, collection_name: str) -> CollectionInfo:
         """Get collection information."""
         data = self._make_request("GET", f"/api/knowledge/collections/{collection_name}")
