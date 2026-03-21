@@ -263,6 +263,36 @@ class GraphKnowledgeClient:
         )
 
     @retry_with_backoff(max_retries=3)
+    def merge_node(
+        self,
+        label: str,
+        node_id: str,
+        properties: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Merge a node (create if not exists, update if exists).
+
+        This is idempotent - safe to call multiple times with the same ID.
+
+        Args:
+            label: Node label (e.g., "FlowPattern", "FlowState")
+            node_id: Unique identifier
+            properties: Additional properties
+
+        Returns:
+            Merged node data
+        """
+        return self._request(
+            "POST",
+            "/api/v1/graph/nodes/merge",
+            json={
+                "label": label,
+                "id": node_id,
+                "properties": properties or {},
+            },
+        )
+
+    @retry_with_backoff(max_retries=3)
     def get_node(self, label: str, node_id: str) -> Optional[Dict[str, Any]]:
         """Get a node by label and ID."""
         try:
@@ -358,6 +388,45 @@ class GraphKnowledgeClient:
             "POST",
             "/api/v1/graph/relationships/bulk",
             json={"relationships": relationships},
+        )
+
+    @retry_with_backoff(max_retries=3)
+    def merge_relationship(
+        self,
+        from_label: str,
+        from_id: str,
+        to_label: str,
+        to_id: str,
+        rel_type: str,
+        properties: Dict[str, Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Merge a relationship (create if not exists, idempotent).
+
+        This is idempotent - safe to call multiple times.
+
+        Args:
+            from_label: Source node label
+            from_id: Source node ID
+            to_label: Target node label
+            to_id: Target node ID
+            rel_type: Relationship type (e.g., "HAS_STATE", "HAS_ACTION")
+            properties: Additional properties
+
+        Returns:
+            Merged relationship data
+        """
+        return self._request(
+            "POST",
+            "/api/v1/graph/relationships/merge",
+            json={
+                "from_label": from_label,
+                "from_id": from_id,
+                "to_label": to_label,
+                "to_id": to_id,
+                "type": rel_type,
+                "properties": properties or {},
+            },
         )
 
     # =========================================================================
