@@ -135,7 +135,7 @@ class KnowledgeClient:
     def __init__(
         self,
         base_url: Optional[str] = None,
-        read_timeout: float = 180.0,
+        read_timeout: float = 600.0,
         connect_timeout: float = 10.0,
         max_retries: int = 3,
         max_connections_per_route: int = 50,
@@ -147,7 +147,7 @@ class KnowledgeClient:
 
         Args:
             base_url: Direct URL override (bypasses service discovery)
-            read_timeout: Read timeout in seconds (default: 180, increased for large document processing)
+            read_timeout: Read timeout in seconds (default: 600, increased for large document processing)
             connect_timeout: Connection timeout in seconds (default: 10, same as Java FeignClient)
             max_retries: Maximum retry attempts
             max_connections_per_route: Max keepalive connections per route (default: 50, same as Java FeignClient)
