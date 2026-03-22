@@ -49,7 +49,7 @@ Request Interceptors (similar to Java FeignClient):
     ])
 """
 
-from .client import KnowledgeClient, get_knowledge_client, RequestInterceptor
+from .knowledge_client import KnowledgeClient, get_knowledge_client, RequestInterceptor
 from .models import (
     MetadataFilter,
     CollectionInfo,
@@ -124,7 +124,7 @@ except ImportError:
     CeleryTimeoutError = None
     CeleryTaskError = None
 
-__version__ = "1.4.1"
+__version__ = "1.4.2"
 
 # Graph Knowledge Client SDK
 # Import with: from workflow_client import GraphKnowledgeClient
@@ -172,45 +172,6 @@ from .identifiers import (
     generate_screen_identity,
     extract_mode,
     read_file_content,
-)
-
-# MindMap Model - Deterministic template-based planning
-from .models.mindmap import (
-    MindMapModel,
-    MindMap,  # Backwards compatibility alias
-    create_empty_mindmap,
-    create_mindmap_for_crud,
-    # Enums
-    ScreenType,
-    ScreenMode,
-    WidgetType,
-    ButtonType,
-    ViewpointCategory,
-    WidgetState,
-    # Components
-    TestItem,
-    ViewpointPlan,
-    WidgetConstraints,
-    WidgetTestPlan,
-    ButtonTestPlan,
-    DTReference,
-    FixedTests,
-    ModeTestPlan,
-    # Template Constants
-    WIDGET_TEST_COUNTS,
-    WIDGET_APPLICABLE_MODES,
-    LIST_MODE_FIXED_TESTS,
-    ADD_MODE_FIXED_TESTS,
-    EDIT_MODE_FIXED_TESTS,
-    MODE_VALIDATION_TRIGGERS,
-    DT_COMBINATIONS,
-    DT_ROW_MULTIPLIER,
-    # Utility Functions
-    get_widget_test_count,
-    get_applicable_modes,
-    get_mode_fixed_tests,
-    get_dt_test_count,
-    calculate_trigger_tests,
 )
 
 __all__ = [
@@ -262,42 +223,6 @@ __all__ = [
     "CeleryClientError",
     "CeleryTimeoutError",
     "CeleryTaskError",
-    # MindMap Main Model
-    "MindMapModel",
-    "MindMap",
-    "create_empty_mindmap",
-    "create_mindmap_for_crud",
-    # MindMap Enums
-    "ScreenType",
-    "ScreenMode",
-    "WidgetType",
-    "ButtonType",
-    "ViewpointCategory",
-    "WidgetState",
-    # MindMap Components
-    "TestItem",
-    "ViewpointPlan",
-    "WidgetConstraints",
-    "WidgetTestPlan",
-    "ButtonTestPlan",
-    "DTReference",
-    "FixedTests",
-    "ModeTestPlan",
-    # MindMap Template Constants
-    "WIDGET_TEST_COUNTS",
-    "WIDGET_APPLICABLE_MODES",
-    "LIST_MODE_FIXED_TESTS",
-    "ADD_MODE_FIXED_TESTS",
-    "EDIT_MODE_FIXED_TESTS",
-    "MODE_VALIDATION_TRIGGERS",
-    "DT_COMBINATIONS",
-    "DT_ROW_MULTIPLIER",
-    # MindMap Utility Functions
-    "get_widget_test_count",
-    "get_applicable_modes",
-    "get_mode_fixed_tests",
-    "get_dt_test_count",
-    "calculate_trigger_tests",
     # Graph Knowledge Client
     "GraphKnowledgeClient",
     "get_graph_knowledge_client",
