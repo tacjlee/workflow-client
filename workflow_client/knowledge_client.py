@@ -943,9 +943,9 @@ class KnowledgeClient:
             file_name: Original file name
             user_id: Optional user ID
             document_type: Document type (document, viewpoint, testcase, etc.)
-            parent_chunk_size: Size of parent chunks (default 4000 chars)
-            child_chunk_size: Size of child chunks (default 500 chars)
-            child_chunk_overlap: Overlap between children (default 100)
+            parent_chunk_size: Size of parent chunks (default 10000 chars)
+            child_chunk_size: Size of child chunks (default 1000 chars)
+            child_chunk_overlap: Overlap between children (default 200)
 
         Returns:
             ParentChildProcessResult with parent and child IDs
