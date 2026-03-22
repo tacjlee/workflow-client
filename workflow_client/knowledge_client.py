@@ -918,9 +918,9 @@ class KnowledgeClient:
         file_name: Optional[str] = None,
         user_id: Optional[str] = None,
         document_type: str = "document",
-        parent_chunk_size: int = 4000,
-        child_chunk_size: int = 500,
-        child_chunk_overlap: int = 100
+        parent_chunk_size: Optional[int] = None,
+        child_chunk_size: Optional[int] = None,
+        child_chunk_overlap: Optional[int] = None
     ) -> ParentChildProcessResult:
         """
         Add document with parent-child chunking strategy.
@@ -962,24 +962,32 @@ class KnowledgeClient:
             )
             print(f"Created {result.parent_count} parents, {result.child_count} children")
         """
+        # Build chunk_config only with provided values (let server use defaults)
+        chunk_config = {}
+        if parent_chunk_size is not None:
+            chunk_config["parent_chunk_size"] = parent_chunk_size
+        if child_chunk_size is not None:
+            chunk_config["child_chunk_size"] = child_chunk_size
+        if child_chunk_overlap is not None:
+            chunk_config["child_chunk_overlap"] = child_chunk_overlap
+
+        request_body = {
+            "collection_name": collection_name,
+            "content": content,
+            "tenant_id": tenant_id,
+            "knowledge_id": knowledge_id,
+            "document_id": document_id,
+            "file_name": file_name,
+            "user_id": user_id,
+            "document_type": document_type,
+        }
+        if chunk_config:
+            request_body["chunk_config"] = chunk_config
+
         data = self._make_request(
             "POST",
             "/api/knowledge/documents/process/parent-child",
-            json={
-                "collection_name": collection_name,
-                "content": content,
-                "tenant_id": tenant_id,
-                "knowledge_id": knowledge_id,
-                "document_id": document_id,
-                "file_name": file_name,
-                "user_id": user_id,
-                "document_type": document_type,
-                "chunk_config": {
-                    "parent_chunk_size": parent_chunk_size,
-                    "child_chunk_size": child_chunk_size,
-                    "child_chunk_overlap": child_chunk_overlap
-                }
-            }
+            json=request_body
         )
         return ParentChildProcessResult(**data)
 
