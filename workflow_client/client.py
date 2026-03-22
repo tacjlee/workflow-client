@@ -992,7 +992,8 @@ class KnowledgeClient:
         expand_top_n: int = 5,
         filters: Optional[MetadataFilter] = None,
         score_threshold: Optional[float] = None,
-        include_children: bool = False
+        include_children: bool = False,
+        score_aggregation: str = "mean"
     ) -> SearchExpandResult:
         """
         Search for parent documents by querying child chunks.
@@ -1002,7 +1003,7 @@ class KnowledgeClient:
         This method:
         1. Searches child chunks (chunk_type="child")
         2. Groups results by parent_id
-        3. Calculates parent score as max of child scores
+        3. Calculates parent score using aggregation method
         4. Returns full parent content for top N parents
 
         Args:
@@ -1013,6 +1014,10 @@ class KnowledgeClient:
             filters: Metadata filters (applied to children)
             score_threshold: Minimum similarity score
             include_children: Include matching children in response
+            score_aggregation: How to aggregate child scores for parent ranking.
+                - "mean": Average of matching child scores (default, better relevance)
+                - "max": Maximum child score (legacy behavior)
+                - "sum": Sum of matching child scores (favors more matches)
 
         Returns:
             SearchExpandResult with parent documents and their content
@@ -1022,7 +1027,8 @@ class KnowledgeClient:
                 collection_name="tenant_abc_test_kb",
                 query="email validation",
                 expand_top_n=5,
-                filters=MetadataFilter(document_type="testcase")
+                filters=MetadataFilter(document_type="testcase"),
+                score_aggregation="mean"
             )
             for parent in result.parents:
                 print(f"Test Case (score: {parent.score}):")
@@ -1033,7 +1039,8 @@ class KnowledgeClient:
             "query": query,
             "top_k": top_k,
             "expand_top_n": expand_top_n,
-            "include_children": include_children
+            "include_children": include_children,
+            "score_aggregation": score_aggregation
         }
         if filters:
             request_data["filters"] = filters.to_dict() if hasattr(filters, 'to_dict') else filters
