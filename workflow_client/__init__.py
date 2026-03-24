@@ -124,7 +124,7 @@ except ImportError:
     CeleryTimeoutError = None
     CeleryTaskError = None
 
-__version__ = "1.4.2"
+__version__ = "1.4.5"
 
 # Graph Knowledge Client SDK
 # Import with: from workflow_client import GraphKnowledgeClient

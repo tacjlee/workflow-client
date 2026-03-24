@@ -33,6 +33,24 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
+def _get_config(key: str, default: str) -> str:
+    """
+    Get config value with fallback hierarchy:
+    1. Consul (if available)
+    2. Environment variable
+    3. Default value
+    """
+    try:
+        from workflow_client import consul_client
+        if consul_client is not None and consul_client.is_available():
+            value = consul_client.get(key, None)
+            if value is not None:
+                return value
+    except (ImportError, Exception):
+        pass
+    return os.getenv(key, default)
+
+
 class GraphKnowledgeError(Exception):
     """Base exception for graph knowledge client errors."""
     pass
@@ -112,7 +130,7 @@ class GraphKnowledgeClient:
             max_retries: Maximum retry attempts
             interceptors: List of request interceptors
         """
-        self._base_url = base_url or os.getenv("GRAPH_KNOWLEDGE_SERVICE_URL", "http://localhost:8006")
+        self._base_url = base_url or _get_config("GRAPH_KNOWLEDGE_SERVICE_URL", "http://localhost:8006")
         self._timeout = httpx.Timeout(read_timeout, connect=connect_timeout)
         self._max_retries = max_retries
         self._client: Optional[httpx.Client] = None
